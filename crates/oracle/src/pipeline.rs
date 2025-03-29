@@ -11,8 +11,8 @@ use kona_derive::{
         AttributesQueue, BatchProvider, BatchStream, ChannelProvider, ChannelReader, FrameQueue,
         L1Retrieval, L1Traversal,
     },
-    traits::{BlobProvider, OriginProvider, Pipeline, SignalReceiver},
-    types::{PipelineResult, Signal, StepResult},
+    traits::{BlobProvider, L2ChainProvider, OriginProvider, Pipeline, SignalReceiver},
+    types::{PipelineResult, ResetSignal, Signal, StepResult},
 };
 use kona_driver::{DriverPipeline, PipelineCursor};
 use kona_genesis::{RollupConfig, SystemConfig};
@@ -73,15 +73,15 @@ where
     C: CelestiaProvider + Send + Sync + Debug + Clone,
 {
     /// Constructs a new oracle-backed derivation pipeline.
-    pub fn new(
+    pub async fn new(
         cfg: Arc<RollupConfig>,
         sync_start: Arc<RwLock<PipelineCursor>>,
         caching_oracle: Arc<O>,
         blob_provider: B,
         chain_provider: OracleL1ChainProvider<O>,
-        l2_chain_provider: OracleL2ChainProvider<O>,
+        mut l2_chain_provider: OracleL2ChainProvider<O>,
         celestia_provider: C,
-    ) -> Self {
+    ) -> PipelineResult<Self> {
         let attributes = StatefulAttributesBuilder::new(
             cfg.clone(),
             l2_chain_provider.clone(),
@@ -91,18 +91,35 @@ where
         let celestia_data_source = CelestiaDASource::new(celestia_provider);
         let dap = CelestiaDADataSource::new(dap, celestia_data_source);
 
-        let pipeline = PipelineBuilder::new()
-            .rollup_config(cfg)
+        let mut pipeline = PipelineBuilder::new()
+            .rollup_config(cfg.clone())
             .dap_source(dap)
-            .l2_chain_provider(l2_chain_provider)
+            .l2_chain_provider(l2_chain_provider.clone())
             .chain_provider(chain_provider)
             .builder(attributes)
             .origin(sync_start.read().origin())
             .build();
-        Self {
+
+        // Reset the pipeline to populate the initial system configuration in L1 Traversal.
+        let l2_safe_head = *sync_start.read().l2_safe_head();
+        pipeline
+            .signal(
+                ResetSignal {
+                    l2_safe_head,
+                    l1_origin: sync_start.read().origin(),
+                    system_config: l2_chain_provider
+                        .system_config_by_number(l2_safe_head.block_info.number, cfg.clone())
+                        .await
+                        .ok(),
+                }
+                .signal(),
+            )
+            .await?;
+
+        Ok(Self {
             pipeline,
             caching_oracle,
-        }
+        })
     }
 }
 
