@@ -66,20 +66,26 @@ where
             .next(block_ref, batcher_address)
             .await?;
 
-        if pointer_data[2] != 0x0c {
-            // check if there's more appropirate error, since we just fetched a celestia batch that does not correspond to celestia
-            return Err(PipelineErrorKind::Temporary(PipelineError::EndOfSource));
-        }
+        let blob = if pointer_data[2] == 0x0c {
+            let height_bytes = &pointer_data[3..11];
+            let height = u64::from_le_bytes(height_bytes.try_into().unwrap());
+            let hash_array: [u8; 32] = pointer_data[11..43]
+                .try_into()
+                .expect("Slice must be 32 bytes");
+            let commitment = Commitment::new(hash_array);
 
-        let height_bytes = &pointer_data[3..11];
-        let height = u64::from_le_bytes(height_bytes.try_into().unwrap());
-        let hash_array: [u8; 32] = pointer_data[11..43]
-            .try_into()
-            .expect("Slice must be 32 bytes");
-        let commitment = Commitment::new(hash_array);
+            info!("Fetching celestia blob at height: {:?}", height);
+            let celestia_blob = self.celestia_source.next(height, commitment).await?;
 
-        info!("Fetching blob at height: {:?}", height);
-        let blob = self.celestia_source.next(height, commitment).await?;
+            celestia_blob
+        } else {
+            info!(
+                "Fetching data from Ethereum Source at ref: {:?}",
+                block_ref.number
+            );
+            pointer_data
+        };
+
         Ok(blob)
     }
 
