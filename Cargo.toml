@@ -6,8 +6,8 @@ members = ["bin/*", "crates/*"]
 # Workspace
 hana-client = { path = "bin/client", version = "0.1.0", default-features = false }
 hana-celestia = { path = "crates/celestia", version = "0.1.0", default-features = false }
-hana-proofs = { path = "crates/proofs", version = "0.1.0", default-features = false}
-hana-blobstream = { path = "crates/blobstream", version = "0.1.0", default-features = false}
+hana-proofs = { path = "crates/proofs", version = "0.1.0", default-features = false }
+hana-blobstream = { path = "crates/blobstream", version = "0.1.0", default-features = false }
 hana-oracle = { path = "crates/oracle", version = "0.1.0", default-features = false }
 
 # Kona
@@ -15,21 +15,21 @@ hana-oracle = { path = "crates/oracle", version = "0.1.0", default-features = fa
 # but publish infrequently (last was 2 weeks ago). We want to make sure to use the latest code
 # while we're still figuring out how to integrate with it.
 # Replace these version-based dependencies
-kona-mpt = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-derive = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-driver = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-executor = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-proof = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-std-fpvm = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-preimage = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-std-fpvm-proc = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-providers-alloy = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-protocol = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-genesis = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-rpc = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-client = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15", default-features = false }
-kona-host = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15" }
-kona-cli = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.15" }
+kona-mpt = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-derive = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-driver = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-executor = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-proof = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-std-fpvm = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-preimage = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-std-fpvm-proc = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-providers-alloy = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-protocol = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-genesis = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-rpc = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-client = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16", default-features = false }
+kona-host = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16" }
+kona-cli = { git = "https://github.com/op-rs/kona", tag = "kona-client/v0.1.0-beta.16" }
 
 # Alloy
 alloy-rlp = { version = "^0.3.11", default-features = false }
@@ -96,8 +96,8 @@ unsigned-varint = "0.8.0"
 revm = { version = "16.0.0", default-features = false }
 
 # Celestia
-celestia-types = {git = "https://github.com/eigerco/lumina", rev = "4751731" }
-celestia-rpc = {git = "https://github.com/eigerco/lumina", rev = "4751731" }
+celestia-types = { git = "https://github.com/eigerco/lumina", rev = "4751731" }
+celestia-rpc = { git = "https://github.com/eigerco/lumina", rev = "4751731" }
 jsonrpsee = "0.24.9"
 
 [profile.dev]
