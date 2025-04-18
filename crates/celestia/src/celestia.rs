@@ -66,7 +66,7 @@ where
             .next(block_ref, batcher_address)
             .await?;
 
-        let blob = if pointer_data[2] == 0x0c {
+        let blob = if pointer_data[0] == 0x01 && pointer_data[2] == 0x0c {
             let height_bytes = &pointer_data[3..11];
             let height = u64::from_le_bytes(height_bytes.try_into().unwrap());
             let hash_array: [u8; 32] = pointer_data[11..43]
