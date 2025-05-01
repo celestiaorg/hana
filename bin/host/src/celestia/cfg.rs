@@ -1,8 +1,5 @@
 //! This module contains all CLI-specific code for the single celestia chain entrypoint.
 
-// Need to replicate single CLI since its not exposed / eported and can't wrap around it
-
-use alloy_provider::Provider;
 use celestia_types::nmt::Namespace;
 use clap::Parser;
 use hana_oracle::hint::HintWrapper;
@@ -18,7 +15,7 @@ use kona_host::{
 use kona_cli::cli_styles;
 use serde::Serialize;
 
-use alloy_primitives::{hex, Address};
+use alloy_primitives::hex;
 use anyhow::{anyhow, Result};
 use kona_preimage::{
     BidirectionalChannel, Channel, HintReader, HintWriter, OracleReader, OracleServer,
@@ -26,7 +23,7 @@ use kona_preimage::{
 use kona_providers_alloy::{OnlineBeaconClient, OnlineBlobProvider};
 use kona_std_fpvm::{FileChannel, FileDescriptor};
 use op_alloy_network::Optimism;
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 use tokio::{
     sync::RwLock,
     task::{self, JoinHandle},
@@ -224,24 +221,7 @@ impl CelestiaChainHost {
         .expect("Invalid hex");
         let namespace = Namespace::new_v0(&namespace_bytes).expect("Invalid namespace");
 
-        // call l1 provider for chain id and check against mapping
-
-        let chain_id = l1_provider
-            .get_chain_id()
-            .await
-            .expect("unable to fetch chain id from root provider");
-
-        let blobstream_address = match ChainId::from_u64(chain_id) {
-            Some(chain) => chain.blostream_address(),
-            None => {
-                return Err(SingleChainHostError::Other(
-                    "Unknown chain id for blobstream address",
-                ))
-            }
-        };
-
-        let celestia_provider =
-            OnlineCelestiaProvider::new(celestia_client, namespace, blobstream_address);
+        let celestia_provider = OnlineCelestiaProvider::new(celestia_client, namespace);
 
         Ok(CelestiaChainProviders {
             inner_providers: SingleChainProviders {
@@ -258,53 +238,4 @@ impl OnlineHostBackendCfg for CelestiaChainHost {
     type HintType = HintWrapper;
     // TODO: Modify so that is uses "CelestiaChainProviders"
     type Providers = CelestiaChainProviders;
-}
-
-// Enum for known EVM chain IDs
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ChainId {
-    // Mainnets
-    EthereumMainnet = 1,
-    ArbitrumOne = 42161,
-    Base = 8453,
-
-    // Testnets
-    Sepolia = 11155111,
-    ArbitrumSepolia = 421614,
-    BaseSepolia = 84532,
-}
-
-impl ChainId {
-    pub fn from_u64(id: u64) -> Option<Self> {
-        match id {
-            1 => Some(Self::EthereumMainnet),
-            42161 => Some(Self::ArbitrumOne),
-            8453 => Some(Self::Base),
-            11155111 => Some(Self::Sepolia),
-            421614 => Some(Self::ArbitrumSepolia),
-            84532 => Some(Self::BaseSepolia),
-            _ => None,
-        }
-    }
-
-    pub fn blostream_address(&self) -> Address {
-        match self {
-            Self::EthereumMainnet => {
-                Address::from_str("0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe").unwrap()
-            }
-            Self::ArbitrumOne => {
-                Address::from_str("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794").unwrap()
-            }
-            Self::Base => Address::from_str("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794").unwrap(),
-            Self::Sepolia => {
-                Address::from_str("0xF0c6429ebAB2e7DC6e05DaFB61128bE21f13cb1e").unwrap()
-            }
-            Self::ArbitrumSepolia => {
-                Address::from_str("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2").unwrap()
-            }
-            Self::BaseSepolia => {
-                Address::from_str("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2").unwrap()
-            }
-        }
-    }
 }
