@@ -56,8 +56,7 @@ pub async fn find_data_commitment(
         // Parse logs using the generated event type
         for log in logs {
             // Try to decode the log using SP1Blobstream's generated event decoder
-            if let Ok(event) =
-                SP1Blobstream::DataCommitmentStored::decode_log(&log.clone().into(), true)
+            if let Ok(event) = SP1Blobstream::DataCommitmentStored::decode_log(&log.clone().into())
             {
                 // Check if this event contains the celestia_height
                 if event.startBlock <= celestia_height && celestia_height < event.endBlock {
