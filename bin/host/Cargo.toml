@@ -15,6 +15,7 @@ kona-proof = { workspace = true, features = ["std"] }
 kona-providers-alloy.workspace = true
 kona-std-fpvm.workspace = true
 kona-genesis.workspace = true
+kona-client.workspace = true
 
 # Alloy
 alloy-provider = { workspace = true, features = ["reqwest"] }
@@ -51,4 +52,3 @@ celestia = []
 [[bin]]
 name = "kona-host"
 path = "src/bin/host.rs"
-

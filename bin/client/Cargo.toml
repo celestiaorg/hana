@@ -21,8 +21,10 @@ hana-oracle.workspace = true
 tracing.workspace = true
 
 thiserror.workspace = true
-
 kona-client.workspace = true
+alloy-evm = "0.6.0"
+op-revm = "3.0.2"
+op-alloy-consensus.workspace = true
 
 [features]
 default = ["client-tracing"]

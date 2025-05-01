@@ -6,6 +6,7 @@ use alloy_provider::Provider;
 use celestia_types::nmt::Namespace;
 use clap::Parser;
 use hana_oracle::hint::HintWrapper;
+use kona_client::fpvm_evm::FpvmOpEvmFactory;
 use kona_genesis::RollupConfig;
 use kona_host::{
     eth::http_provider,
@@ -125,10 +126,12 @@ impl CelestiaChainHost {
         let preimage = BidirectionalChannel::new()?;
 
         let server_task = self.start_server(hint.host, preimage.host).await?;
+        let hint_writer = HintWriter::new(hint.client);
+        let oracle_reader = OracleReader::new(preimage.client);
         let client_task = task::spawn(hana_client::single::run(
-            OracleReader::new(preimage.client),
-            HintWriter::new(hint.client),
-            None,
+            oracle_reader.clone(),
+            hint_writer.clone(),
+            FpvmOpEvmFactory::new(hint_writer, oracle_reader),
         ));
 
         let (_, client_result) = tokio::try_join!(server_task, client_task)?;
