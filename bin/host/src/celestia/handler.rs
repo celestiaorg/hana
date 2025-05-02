@@ -72,6 +72,7 @@ impl HintHandler for CelestiaChainHintHandler {
                 let blobstream_proof = get_blobstream_proof(
                     providers.celestia.client.as_ref(),
                     providers.l1(),
+                    cfg.single_host.l1_head,
                     height,
                     blob,
                 )
@@ -86,6 +87,9 @@ impl HintHandler for CelestiaChainHintHandler {
                     blobstream_proof.proof_nonce,
                     blobstream_proof.storage_root,
                     blobstream_proof.storage_proof,
+                    blobstream_proof.account_proof,
+                    blobstream_proof.l1_head,
+                    blobstream_proof.blobstream_address,
                 )
                 .to_bytes()
                 .expect("failed to serialize celestia oracle payload");

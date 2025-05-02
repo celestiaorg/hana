@@ -1,5 +1,5 @@
 use alloc::{boxed::Box, vec::Vec};
-use alloy_primitives::{Bytes, FixedBytes, B256, U256};
+use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
 use celestia_types::{hash::Hash, MerkleProof, ShareProof};
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +22,12 @@ pub struct OraclePayload {
     pub storage_root: B256,
     /// The storage proof for the state_dataCommitments mapping slot in Blobstream
     pub storage_proof: Vec<Bytes>,
+    /// The account proof for the blobstream address
+    pub account_proof: Vec<Bytes>,
+    /// The L1 head hash to verify the account proof against
+    pub l1_head: FixedBytes<32>,
+    /// The blobstream address to verify
+    pub blobstream_address: Address,
 }
 
 impl OraclePayload {
@@ -35,6 +41,9 @@ impl OraclePayload {
         proof_nonce: U256,
         storage_root: B256,
         storage_proof: Vec<Bytes>,
+        account_proof: Vec<Bytes>,
+        l1_head: FixedBytes<32>,
+        blobstream_address: Address,
     ) -> Self {
         Self {
             blob,
@@ -45,6 +54,9 @@ impl OraclePayload {
             proof_nonce,
             storage_root,
             storage_proof,
+            account_proof,
+            l1_head,
+            blobstream_address,
         }
     }
 
