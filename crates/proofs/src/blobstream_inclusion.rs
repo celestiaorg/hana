@@ -1,7 +1,9 @@
 use alloc::{boxed::Box, vec::Vec};
-use alloy_primitives::{keccak256, Address, Bytes, B256};
+use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256};
 use alloy_provider::{Provider, RootProvider};
-use alloy_rpc_types_eth::{BlockNumberOrTag, Filter, FilterBlockOption, FilterSet};
+use alloy_rpc_types_eth::{
+    BlockNumberOrTag, EIP1186AccountProofResponse, Filter, FilterBlockOption, FilterSet,
+};
 use alloy_sol_types::SolEvent;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
 use celestia_types::Blob;
@@ -99,6 +101,7 @@ pub async fn find_data_commitment(
 pub async fn get_blobstream_proof(
     celestia_node: &Client,
     l1_provider: &RootProvider,
+    l1_head: FixedBytes<32>,
     height: u64,
     blob: Blob,
     blobstream_address: Address,
@@ -145,9 +148,16 @@ pub async fn get_blobstream_proof(
 
     let slot_b256 = B256::from_slice(slot.as_slice());
 
-    let proof_response = l1_provider
-        .get_proof(blobstream_address, vec![slot_b256])
-        .await?;
+    let slot_value = serde_json::Value::String(format!("{:#x}", slot_b256));
+
+    let params = serde_json::Value::Array(vec![
+        serde_json::Value::String(format!("{:#x}", blobstream_address)),
+        serde_json::Value::Array(vec![slot_value]),
+        serde_json::Value::String(format!("{:#x}", l1_head)),
+    ]);
+
+    let proof_response: EIP1186AccountProofResponse =
+        l1_provider.client().request("eth_getProof", params).await?;
 
     let proof_bytes: Vec<Bytes> = proof_response
         .storage_proof
@@ -165,9 +175,12 @@ pub async fn get_blobstream_proof(
 
     match verify_data_commitment_storage(
         proof_response.storage_hash,
+        l1_head,
         proof_bytes.clone(),
+        proof_response.account_proof.clone(),
         event.proof_nonce,
         event.data_commitment,
+        blobstream_address,
     ) {
         Ok(_) => {
             println!("Succesfully verified storage proof for Blobstream data commitment");
@@ -180,6 +193,9 @@ pub async fn get_blobstream_proof(
                 event.proof_nonce,
                 proof_response.storage_hash.clone(),
                 proof_bytes,
+                proof_response.account_proof,
+                l1_head,
+                blobstream_address,
             ));
         }
         Err(err) => anyhow::bail!("Error verifying storage proof {}", err),

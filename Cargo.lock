@@ -2569,6 +2569,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-contract",
  "alloy-primitives",
+ "alloy-rlp",
  "alloy-sol-types",
  "alloy-trie",
  "bincode",
@@ -2675,6 +2676,7 @@ dependencies = [
  "celestia-rpc",
  "celestia-types",
  "hana-blobstream",
+ "serde_json",
  "tracing",
 ]
 
