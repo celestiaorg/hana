@@ -73,10 +73,16 @@ pub struct BlobstreamProof {
     pub storage_proof: Vec<Bytes>,
     /// The account proof for the blobstream address
     pub account_proof: Vec<Bytes>,
-    /// The L1 head hash to verify the account proof against
-    pub l1_head: FixedBytes<32>,
+    /// The L1 state root hash to verify the account proof against
+    pub state_root: FixedBytes<32>,
     /// The blobstream address to verify
     pub blobstream_address: Address,
+    /// The balance to verify against the blobstream address
+    pub blobstream_balance: U256,
+    /// The nonce to verify against the blobstream address
+    pub blobstream_nonce: u64,
+    /// The code hash to verify against the blobstream address
+    pub blobstream_code_hash: B256,
 }
 
 impl BlobstreamProof {
@@ -90,8 +96,11 @@ impl BlobstreamProof {
         storage_root: B256,
         storage_proof: Vec<Bytes>,
         account_proof: Vec<Bytes>,
-        l1_head: FixedBytes<32>,
+        state_root: FixedBytes<32>,
         blobstream_address: Address,
+        blobstream_balance: U256,
+        blobstream_nonce: u64,
+        blobstream_code_hash: B256,
     ) -> Self {
         Self {
             data_root,
@@ -102,8 +111,11 @@ impl BlobstreamProof {
             storage_root,
             storage_proof,
             account_proof,
-            l1_head,
+            state_root,
             blobstream_address,
+            blobstream_balance,
+            blobstream_nonce,
+            blobstream_code_hash,
         }
     }
 
@@ -141,13 +153,16 @@ pub fn encode_data_root_tuple(height: u64, data_root: &Hash) -> Vec<u8> {
 
 /// Verify a storage proof for the state_dataCommitments mapping
 pub fn verify_data_commitment_storage(
-    root: B256,
+    storage_root: B256,
     state_root: B256,
     storage_proof: Vec<Bytes>,
     account_proof: Vec<Bytes>,
     commitment_nonce: U256,
     expected_commitment: B256,
     expected_blobstream_address: Address,
+    blobstream_balance: U256,
+    blobstream_nonce: u64,
+    blobstream_code_hash: B256,
 ) -> Result<(), ProofVerificationError> {
     // Currently verifies the value of the slot
     // need to verify the storage root agains the state root of the block
@@ -162,11 +177,32 @@ pub fn verify_data_commitment_storage(
     expected_with_prefix.push(0xa0); // Add the RLP prefix
     expected_with_prefix.extend_from_slice(expected_commitment.as_slice());
 
-    // verify the value of the storage slot, then of the storage proof against
-    match verify_proof(root, nibbles, Some(expected_with_prefix), &storage_proof) {
+    // verify the value of the storage slot, then of the storage proof against the state root
+    match verify_proof(
+        storage_root,
+        nibbles,
+        Some(expected_with_prefix),
+        &storage_proof,
+    ) {
         Ok(_) => {
             let nibbles = Nibbles::unpack(keccak256(expected_blobstream_address));
-            let expected = alloy_rlp::encode(expected_blobstream_address);
+            let mut expected = Vec::new();
+
+            let nonce_encoded = alloy_rlp::encode(&blobstream_nonce);
+            let balance_encoded = alloy_rlp::encode(&blobstream_balance);
+            let code_hash_encoded = alloy_rlp::encode(&blobstream_code_hash);
+            let storage_root_encoded = alloy_rlp::encode(&storage_root);
+
+            alloy_rlp::encode_list::<_, Vec<u8>>(
+                &[
+                    &nonce_encoded,
+                    &balance_encoded,
+                    &code_hash_encoded,
+                    &storage_root_encoded,
+                ],
+                &mut expected,
+            );
+
             match verify_proof(state_root, nibbles, Some(expected), &account_proof) {
                 Ok(_) => return Ok(()),
                 Err(err) => return Err(err),

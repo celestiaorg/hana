@@ -2,7 +2,7 @@ use alloc::{boxed::Box, vec::Vec};
 use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256};
 use alloy_provider::{Provider, RootProvider};
 use alloy_rpc_types_eth::{
-    BlockNumberOrTag, EIP1186AccountProofResponse, Filter, FilterBlockOption, FilterSet,
+    BlockId, BlockNumberOrTag, Filter, FilterBlockOption, FilterSet, RpcBlockHash,
 };
 use alloy_sol_types::SolEvent;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
@@ -106,9 +106,38 @@ pub async fn get_blobstream_proof(
     blob: Blob,
     blobstream_address: Address,
 ) -> Result<BlobstreamProof, anyhow::Error> {
+    let l1_block = l1_provider.get_block_by_hash(l1_head).await?.unwrap();
+
+    let block_id = BlockId::Hash(RpcBlockHash::from(B256::from(l1_head)));
+
+    let state_root = l1_block.header.state_root;
     // Fetch the block's data root
     let header = celestia_node.header_get_by_height(height).await?;
 
+    // values needed to verify account proof
+    let blobstream_balance = l1_provider
+        .get_balance(blobstream_address)
+        .block_id(block_id)
+        .await?;
+
+    let code = l1_provider
+        .get_code_at(blobstream_address)
+        .block_id(block_id)
+        .await?;
+
+    let blobstream_code_hash: B256;
+    if code.is_empty() {
+        anyhow::bail!("Error getting blobstream code hash (address has no code)")
+    } else {
+        blobstream_code_hash = B256::from(alloy_primitives::keccak256(&code));
+    }
+
+    let blobstream_nonce = l1_provider
+        .get_transaction_count(blobstream_address)
+        .block_id(block_id)
+        .await?;
+
+    // celestia data root
     let data_root = header.dah.hash();
 
     let eds_row_roots = header.dah.row_roots();
@@ -148,39 +177,28 @@ pub async fn get_blobstream_proof(
 
     let slot_b256 = B256::from_slice(slot.as_slice());
 
-    let slot_value = serde_json::Value::String(format!("{:#x}", slot_b256));
-
-    let params = serde_json::Value::Array(vec![
-        serde_json::Value::String(format!("{:#x}", blobstream_address)),
-        serde_json::Value::Array(vec![slot_value]),
-        serde_json::Value::String(format!("{:#x}", l1_head)),
-    ]);
-
-    let proof_response: EIP1186AccountProofResponse =
-        l1_provider.client().request("eth_getProof", params).await?;
+    let proof_response = l1_provider
+        .get_proof(blobstream_address, vec![slot_b256])
+        .block_id(block_id)
+        .await?;
 
     let proof_bytes: Vec<Bytes> = proof_response
         .storage_proof
         .into_iter()
-        .flat_map(|proof| {
-            // Extract the proof field and apply any needed transformations
-            proof.proof.into_iter().map(|bytes| {
-                // You can apply transformations here if needed
-                // For example: Bytes::from(some_transformation(bytes))
-                // But in this case, we can just return the bytes directly
-                bytes
-            })
-        })
+        .flat_map(|proof| proof.proof.into_iter().map(|bytes| bytes))
         .collect();
 
     match verify_data_commitment_storage(
         proof_response.storage_hash,
-        l1_head,
+        state_root,
         proof_bytes.clone(),
         proof_response.account_proof.clone(),
         event.proof_nonce,
         event.data_commitment,
         blobstream_address,
+        blobstream_balance,
+        blobstream_nonce,
+        blobstream_code_hash,
     ) {
         Ok(_) => {
             println!("Succesfully verified storage proof for Blobstream data commitment");
@@ -194,8 +212,11 @@ pub async fn get_blobstream_proof(
                 proof_response.storage_hash.clone(),
                 proof_bytes,
                 proof_response.account_proof,
-                l1_head,
+                state_root,
                 blobstream_address,
+                blobstream_balance,
+                blobstream_nonce,
+                blobstream_code_hash,
             ));
         }
         Err(err) => anyhow::bail!("Error verifying storage proof {}", err),
