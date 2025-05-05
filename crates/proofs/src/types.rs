@@ -29,22 +29,12 @@ impl BlobstreamChainIds {
 
     pub fn blostream_address(&self) -> Address {
         match self {
-            Self::EthereumMainnet => {
-                Address::from_str("0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe").unwrap()
-            }
-            Self::ArbitrumOne => {
-                Address::from_str("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794").unwrap()
-            }
-            Self::Base => Address::from_str("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794").unwrap(),
-            Self::Sepolia => {
-                Address::from_str("0xF0c6429ebAB2e7DC6e05DaFB61128bE21f13cb1e").unwrap()
-            }
-            Self::ArbitrumSepolia => {
-                Address::from_str("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2").unwrap()
-            }
-            Self::BaseSepolia => {
-                Address::from_str("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2").unwrap()
-            }
+            Self::EthereumMainnet => address!("0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe"),
+            Self::ArbitrumOne => address!("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794"),
+            Self::Base => address!("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794"),
+            Self::Sepolia => address!("0xF0c6429ebAB2e7DC6e05DaFB61128bE21f13cb1e"),
+            Self::ArbitrumSepolia => address!("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2"),
+            Self::BaseSepolia => address!("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2"),
         }
     }
 }
