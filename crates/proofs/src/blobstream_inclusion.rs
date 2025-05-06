@@ -111,6 +111,8 @@ pub async fn get_blobstream_proof(
     let block_id = BlockId::Hash(RpcBlockHash::from(B256::from(l1_head)));
 
     let state_root = l1_block.header.state_root;
+
+    let block_header = l1_block.header;
     // Fetch the block's data root
     let header = celestia_node.header_get_by_height(height).await?;
 
@@ -217,6 +219,7 @@ pub async fn get_blobstream_proof(
                 blobstream_balance,
                 blobstream_nonce,
                 blobstream_code_hash,
+                block_header,
             ));
         }
         Err(err) => anyhow::bail!("Error verifying storage proof {}", err),

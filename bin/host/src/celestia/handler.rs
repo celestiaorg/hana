@@ -79,6 +79,17 @@ impl HintHandler for CelestiaChainHintHandler {
                 )
                 .await?;
 
+                let mut header = blobstream_proof.block_header.clone();
+
+                header.state_root = blobstream_proof.state_root;
+
+                let block_hash = header.hash_slow();
+
+                assert!(
+                    block_hash == cfg.single_host.l1_head,
+                    "computed block hash must match host l1 head"
+                );
+
                 let payload = OraclePayload::new(
                     Bytes::from(data),
                     blobstream_proof.data_root,

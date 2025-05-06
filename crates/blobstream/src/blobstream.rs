@@ -2,6 +2,7 @@ use std::boxed::Box;
 
 use alloc::vec::Vec;
 use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256, U256};
+use alloy_rpc_types_eth::Header;
 use alloy_sol_types::sol;
 use alloy_trie::{
     proof::{verify_proof, ProofVerificationError},
@@ -83,6 +84,8 @@ pub struct BlobstreamProof {
     pub blobstream_nonce: u64,
     /// The code hash to verify against the blobstream address
     pub blobstream_code_hash: B256,
+    /// The block header to verify against the l1 head
+    pub block_header: Header,
 }
 
 impl BlobstreamProof {
@@ -101,6 +104,7 @@ impl BlobstreamProof {
         blobstream_balance: U256,
         blobstream_nonce: u64,
         blobstream_code_hash: B256,
+        block_header: Header,
     ) -> Self {
         Self {
             data_root,
@@ -116,6 +120,7 @@ impl BlobstreamProof {
             blobstream_balance,
             blobstream_nonce,
             blobstream_code_hash,
+            block_header,
         }
     }
 

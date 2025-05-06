@@ -2570,6 +2570,7 @@ dependencies = [
  "alloy-contract",
  "alloy-primitives",
  "alloy-rlp",
+ "alloy-rpc-types-eth",
  "alloy-sol-types",
  "alloy-trie",
  "bincode",
