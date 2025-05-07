@@ -2,7 +2,7 @@ use alloc::{boxed::Box, vec::Vec};
 use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256};
 use alloy_provider::{Provider, RootProvider};
 use alloy_rpc_types_eth::{
-    BlockId, BlockNumberOrTag, Filter, FilterBlockOption, FilterSet, RpcBlockHash,
+    BlockId, BlockNumberOrTag, Filter, FilterBlockOption, FilterSet, Header, RpcBlockHash,
 };
 use alloy_sol_types::SolEvent;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
@@ -201,6 +201,8 @@ pub async fn get_blobstream_proof(
         blobstream_balance,
         blobstream_nonce,
         blobstream_code_hash,
+        block_header.clone(),
+        l1_head,
     ) {
         Ok(_) => {
             println!("Succesfully verified storage proof for Blobstream data commitment");

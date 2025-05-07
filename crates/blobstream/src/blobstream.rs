@@ -1,7 +1,7 @@
 use std::boxed::Box;
 
 use alloc::vec::Vec;
-use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256, U256};
+use alloy_primitives::{aliases::B224, keccak256, Address, Bytes, FixedBytes, B256, U256};
 use alloy_rpc_types_eth::Header;
 use alloy_sol_types::sol;
 use alloy_trie::{
@@ -168,7 +168,19 @@ pub fn verify_data_commitment_storage(
     blobstream_balance: U256,
     blobstream_nonce: u64,
     blobstream_code_hash: B256,
+    block_header: Header,
+    l1_block_hash: B256,
 ) -> Result<(), ProofVerificationError> {
+    let mut header = block_header.clone();
+
+    header.state_root = state_root;
+
+    let block_hash = header.hash_slow();
+
+    assert!(
+        block_hash == l1_block_hash,
+        "computed block hash must match host l1 head"
+    );
     // Currently verifies the value of the slot
     // need to verify the storage root agains the state root of the block
     // Calculate the storage slot for state_dataCommitments[nonce]

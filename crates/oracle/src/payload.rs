@@ -1,5 +1,6 @@
 use alloc::{boxed::Box, vec::Vec};
 use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
+use alloy_rpc_types_eth::Header;
 use celestia_types::{hash::Hash, MerkleProof, ShareProof};
 use serde::{Deserialize, Serialize};
 
@@ -34,6 +35,10 @@ pub struct OraclePayload {
     pub blobstream_nonce: u64,
     /// The code hash to verify against the blobstream address
     pub blobstream_code_hash: B256,
+    /// The block header to verify against the l1 head
+    pub block_header: Header,
+    /// The storage root to verify against
+    pub l1_block_hash: B256,
 }
 
 impl OraclePayload {
@@ -53,6 +58,8 @@ impl OraclePayload {
         blobstream_balance: U256,
         blobstream_nonce: u64,
         blobstream_code_hash: B256,
+        block_header: Header,
+        l1_block_hash: B256,
     ) -> Self {
         Self {
             blob,
@@ -69,6 +76,8 @@ impl OraclePayload {
             blobstream_balance,
             blobstream_nonce,
             blobstream_code_hash,
+            block_header,
+            l1_block_hash,
         }
     }
 
