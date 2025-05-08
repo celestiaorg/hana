@@ -1,5 +1,4 @@
 use alloc::{boxed::Box, vec::Vec};
-use alloy_chains::{NamedChain, NamedChainIter};
 use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256};
 use alloy_provider::{Provider, RootProvider};
 use alloy_rpc_types_eth::{
