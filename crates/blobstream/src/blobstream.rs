@@ -6,7 +6,7 @@ use alloy_rpc_types_eth::Header;
 use alloy_sol_types::sol;
 use alloy_trie::{
     proof::{verify_proof, ProofVerificationError},
-    Nibbles,
+    Nibbles, TrieAccount,
 };
 use celestia_types::{hash::Hash, MerkleProof, ShareProof};
 use serde::{Deserialize, Serialize};
@@ -181,45 +181,34 @@ pub fn verify_data_commitment_storage(
     block_header: Header,
     l1_block_hash: B256,
 ) -> Result<(), ProofVerificationError> {
+    // Verify the block header hash matches the l1 head.
     let block_hash = block_header.hash_slow();
-
     assert!(
         block_hash == l1_block_hash,
         "computed block hash must match host l1 head"
     );
 
-    let mut expected = Vec::new();
+    let account = TrieAccount {
+        nonce: blobstream_nonce,
+        balance: blobstream_balance,
+        code_hash: blobstream_code_hash,
+        storage_root,
+    };
 
-    let nonce_encoded = alloy_rlp::encode(&blobstream_nonce);
-    let balance_encoded = alloy_rlp::encode(&blobstream_balance);
-    let code_hash_encoded = alloy_rlp::encode(&blobstream_code_hash);
-    let storage_root_encoded = alloy_rlp::encode(&storage_root);
-
-    alloy_rlp::encode_list::<_, Vec<u8>>(
-        &[
-            &nonce_encoded,
-            &balance_encoded,
-            &code_hash_encoded,
-            &storage_root_encoded,
-        ],
-        &mut expected,
-    );
-
-    let nibbles = Nibbles::unpack(keccak256(expected_blobstream_address));
+    let blobstream_address_nibbles = Nibbles::unpack(keccak256(expected_blobstream_address));
 
     verify_proof(
         block_header.state_root,
-        nibbles,
-        Some(expected),
+        blobstream_address_nibbles,
+        Some(alloy_rlp::encode(&account)),
         &account_proof,
     )?;
 
-    // Currently verifies the value of the slot
-    // need to verify the storage root agains the state root of the block
-    // Calculate the storage slot for state_dataCommitments[nonce]
-    let slot = calculate_mapping_slot(DATA_COMMITMENTS_SLOT, commitment_nonce);
-
-    let nibbles = Nibbles::unpack(keccak256(slot));
+    // Get the nibbles for the storage slot for state_dataCommitments[nonce]
+    let data_commitment_slot_nibbles = Nibbles::unpack(calculate_mapping_slot(
+        DATA_COMMITMENTS_SLOT,
+        commitment_nonce,
+    ));
 
     // Handle the RLP encoding by modifying the expected result
     // Add the 0xa0 prefix to match how it's stored on-chain
@@ -229,7 +218,7 @@ pub fn verify_data_commitment_storage(
 
     verify_proof(
         storage_root,
-        nibbles,
+        data_commitment_slot_nibbles,
         Some(expected_with_prefix),
         &storage_proof,
     )?;
