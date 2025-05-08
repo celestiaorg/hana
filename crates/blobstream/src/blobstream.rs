@@ -1,12 +1,13 @@
 use std::boxed::Box;
 
 use alloc::vec::Vec;
-use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256, U256};
+use alloy_chains::NamedChain;
+use alloy_primitives::{address, keccak256, Address, Bytes, FixedBytes, B256, U256};
 use alloy_rpc_types_eth::Header;
 use alloy_sol_types::sol;
 use alloy_trie::{
     proof::{verify_proof, ProofVerificationError},
-    Nibbles,
+    Nibbles, TrieAccount,
 };
 use celestia_types::{hash::Hash, MerkleProof, ShareProof};
 use serde::{Deserialize, Serialize};
@@ -76,8 +77,6 @@ pub struct BlobstreamProof {
     pub account_proof: Vec<Bytes>,
     /// The L1 state root hash to verify the account proof against
     pub state_root: FixedBytes<32>,
-    /// The blobstream address to verify
-    pub blobstream_address: Address,
     /// The balance to verify against the blobstream address
     pub blobstream_balance: U256,
     /// The nonce to verify against the blobstream address
@@ -100,7 +99,6 @@ impl BlobstreamProof {
         storage_proof: Vec<Bytes>,
         account_proof: Vec<Bytes>,
         state_root: FixedBytes<32>,
-        blobstream_address: Address,
         blobstream_balance: U256,
         blobstream_nonce: u64,
         blobstream_code_hash: B256,
@@ -116,7 +114,6 @@ impl BlobstreamProof {
             storage_proof,
             account_proof,
             state_root,
-            blobstream_address,
             blobstream_balance,
             blobstream_nonce,
             blobstream_code_hash,
@@ -156,10 +153,24 @@ pub fn encode_data_root_tuple(height: u64, data_root: &Hash) -> Vec<u8> {
     result
 }
 
-/// Verify a storage proof for the state_dataCommitments mapping
+/// Verifies that a data commitment exists in the Ethereum state at the specified L1 block.
+///
+/// This function performs a multi-step verification process:
+///
+/// 1. Validates that the provided block header hash matches the expected L1 block hash,
+///    ensuring we're working with the correct block state.
+///
+/// 2. Verifies the Blobstream contract account exists at the expected address by checking
+///    its account proof against the block's state root. This confirms the contract's
+///    balance, nonce, code hash, and storage root are as expected.
+///
+/// 3. Verifies the data commitment exists at the specific storage slot determined by the
+///    commitment nonce, by validating the storage proof against the contract's storage root.
+///    This confirms the data commitment was properly recorded in the Blobstream contract.
+///
+/// Security Note: This function assumes the l1_block_hash and expected_blobsstream_address come from a secure source.
 pub fn verify_data_commitment_storage(
     storage_root: B256,
-    state_root: B256,
     storage_proof: Vec<Bytes>,
     account_proof: Vec<Bytes>,
     commitment_nonce: U256,
@@ -171,22 +182,34 @@ pub fn verify_data_commitment_storage(
     block_header: Header,
     l1_block_hash: B256,
 ) -> Result<(), ProofVerificationError> {
-    let mut header = block_header.clone();
-
-    header.state_root = state_root;
-
-    let block_hash = header.hash_slow();
-
+    // Verify the block header hash matches the l1 head.
+    let block_hash = block_header.hash_slow();
     assert!(
         block_hash == l1_block_hash,
         "computed block hash must match host l1 head"
     );
-    // Currently verifies the value of the slot
-    // need to verify the storage root agains the state root of the block
-    // Calculate the storage slot for state_dataCommitments[nonce]
-    let slot = calculate_mapping_slot(DATA_COMMITMENTS_SLOT, commitment_nonce);
 
-    let nibbles = Nibbles::unpack(keccak256(slot));
+    let account = TrieAccount {
+        nonce: blobstream_nonce,
+        balance: blobstream_balance,
+        code_hash: blobstream_code_hash,
+        storage_root,
+    };
+
+    let blobstream_address_nibbles = Nibbles::unpack(keccak256(expected_blobstream_address));
+
+    verify_proof(
+        block_header.state_root,
+        blobstream_address_nibbles,
+        Some(alloy_rlp::encode(&account)),
+        &account_proof,
+    )?;
+
+    // Get the nibbles for the storage slot for state_dataCommitments[nonce]
+    let data_commitment_slot_nibbles = Nibbles::unpack(calculate_mapping_slot(
+        DATA_COMMITMENTS_SLOT,
+        commitment_nonce,
+    ));
 
     // Handle the RLP encoding by modifying the expected result
     // Add the 0xa0 prefix to match how it's stored on-chain
@@ -194,39 +217,14 @@ pub fn verify_data_commitment_storage(
     expected_with_prefix.push(0xa0); // Add the RLP prefix
     expected_with_prefix.extend_from_slice(expected_commitment.as_slice());
 
-    // verify the value of the storage slot, then of the storage proof against the state root
-    match verify_proof(
+    verify_proof(
         storage_root,
-        nibbles,
+        data_commitment_slot_nibbles,
         Some(expected_with_prefix),
         &storage_proof,
-    ) {
-        Ok(_) => {
-            let nibbles = Nibbles::unpack(keccak256(expected_blobstream_address));
-            let mut expected = Vec::new();
+    )?;
 
-            let nonce_encoded = alloy_rlp::encode(&blobstream_nonce);
-            let balance_encoded = alloy_rlp::encode(&blobstream_balance);
-            let code_hash_encoded = alloy_rlp::encode(&blobstream_code_hash);
-            let storage_root_encoded = alloy_rlp::encode(&storage_root);
-
-            alloy_rlp::encode_list::<_, Vec<u8>>(
-                &[
-                    &nonce_encoded,
-                    &balance_encoded,
-                    &code_hash_encoded,
-                    &storage_root_encoded,
-                ],
-                &mut expected,
-            );
-
-            match verify_proof(state_root, nibbles, Some(expected), &account_proof) {
-                Ok(_) => return Ok(()),
-                Err(err) => return Err(err),
-            }
-        }
-        Err(err) => return Err(err),
-    }
+    Ok(())
 }
 
 /// Calculate the storage slot for a mapping with a uint256 key
@@ -240,4 +238,25 @@ pub fn calculate_mapping_slot(mapping_slot: u32, key: U256) -> B256 {
     concatenated[32..64].copy_from_slice(&slot_bytes);
 
     alloy_primitives::keccak256(concatenated)
+}
+
+/// The canonical Blobstream address for the given chain id.
+///
+/// Source: https://docs.celestia.org/how-to-guides/blobstream#deployed-contracts
+pub fn blostream_address(chain_id: u64) -> Option<Address> {
+    if let Ok(chain) = NamedChain::try_from(chain_id) {
+        match chain {
+            NamedChain::Mainnet => Some(address!("0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe")),
+            NamedChain::Arbitrum => Some(address!("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794")),
+            NamedChain::Base => Some(address!("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794")),
+            NamedChain::Scroll => Some(address!("0x5008fa5CC3397faEa90fcde71C35945db6822218")),
+            NamedChain::Sepolia => Some(address!("0xF0c6429ebAB2e7DC6e05DaFB61128bE21f13cb1e")),
+            NamedChain::ArbitrumSepolia => Some(address!("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2")),
+            NamedChain::BaseSepolia => Some(address!("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2")),
+            NamedChain::Holesky => Some(address!("0x315A044cb95e4d44bBf6253585FbEbcdB6fb41ef")),
+            _ => None,
+        }
+    } else {
+        None
+    }
 }
