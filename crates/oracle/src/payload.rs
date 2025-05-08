@@ -25,8 +25,6 @@ pub struct OraclePayload {
     pub storage_proof: Vec<Bytes>,
     /// The account proof for the blobstream address
     pub account_proof: Vec<Bytes>,
-    /// The L1 state root hash to verify the account proof against
-    pub state_root: FixedBytes<32>,
     /// The blobstream address to verify
     pub blobstream_address: Address,
     /// The balance to verify against the blobstream address
@@ -53,7 +51,6 @@ impl OraclePayload {
         storage_root: B256,
         storage_proof: Vec<Bytes>,
         account_proof: Vec<Bytes>,
-        state_root: FixedBytes<32>,
         blobstream_address: Address,
         blobstream_balance: U256,
         blobstream_nonce: u64,
@@ -71,7 +68,6 @@ impl OraclePayload {
             storage_root,
             storage_proof,
             account_proof,
-            state_root,
             blobstream_address,
             blobstream_balance,
             blobstream_nonce,

@@ -159,7 +159,6 @@ pub fn encode_data_root_tuple(height: u64, data_root: &Hash) -> Vec<u8> {
 /// Verify a storage proof for the state_dataCommitments mapping
 pub fn verify_data_commitment_storage(
     storage_root: B256,
-    state_root: B256,
     storage_proof: Vec<Bytes>,
     account_proof: Vec<Bytes>,
     commitment_nonce: U256,
@@ -171,11 +170,7 @@ pub fn verify_data_commitment_storage(
     block_header: Header,
     l1_block_hash: B256,
 ) -> Result<(), ProofVerificationError> {
-    let mut header = block_header.clone();
-
-    header.state_root = state_root;
-
-    let block_hash = header.hash_slow();
+    let block_hash = block_header.hash_slow();
 
     assert!(
         block_hash == l1_block_hash,
@@ -220,7 +215,7 @@ pub fn verify_data_commitment_storage(
                 &mut expected,
             );
 
-            match verify_proof(state_root, nibbles, Some(expected), &account_proof) {
+            match verify_proof(block_header.state_root, nibbles, Some(expected), &account_proof) {
                 Ok(_) => return Ok(()),
                 Err(err) => return Err(err),
             }

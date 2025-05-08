@@ -206,7 +206,6 @@ pub async fn get_blobstream_proof(
 
     match verify_data_commitment_storage(
         proof_response.storage_hash,
-        state_root,
         proof_bytes.clone(),
         proof_response.account_proof.clone(),
         event.proof_nonce,

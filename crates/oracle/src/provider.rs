@@ -55,25 +55,9 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
         let payload = OraclePayload::from_bytes(&oracle_result)
             .expect("Failed to deserialize Celestia Oracle Payload");
 
-        match payload.share_proof.verify(payload.data_root) {
-            Ok(_) => info!("Celestia blobs ShareProof succesfully verified"),
-            Err(err) => {
-                return Err(OracleProviderError::Preimage(PreimageOracleError::Other(
-                    err.to_string(),
-                )))
-            }
-        }
-
-        let encoded_data_root_tuple = encode_data_root_tuple(height, &payload.data_root);
-
-        payload
-            .data_root_tuple_proof
-            .verify(encoded_data_root_tuple, *payload.data_commitment)
-            .expect("Failed to verify data root tuple proof");
-
+        // Verify the data commitment exists in storage against the L1 block hash.
         verify_data_commitment_storage(
             payload.storage_root,
-            payload.state_root,
             payload.storage_proof,
             payload.account_proof,
             payload.proof_nonce,
@@ -86,6 +70,22 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
             payload.l1_block_hash,
         )
         .expect("Failed to verify data commitment against Blobstream storage slot");
+
+        match payload.share_proof.verify(payload.data_root) {
+            Ok(_) => info!("Celestia blobs ShareProof succesfully verified"),
+            Err(err) => {
+                return Err(OracleProviderError::Preimage(PreimageOracleError::Other(
+                    err.to_string(),
+                )))
+            }
+        }
+
+        // Verify that the encoded data root tuple is valid against the data commitment in the contract.
+        let encoded_data_root_tuple = encode_data_root_tuple(height, &payload.data_root);
+        payload
+            .data_root_tuple_proof
+            .verify(encoded_data_root_tuple, *payload.data_commitment)
+            .expect("Failed to verify data root tuple proof");
 
         Ok(payload.blob)
     }
