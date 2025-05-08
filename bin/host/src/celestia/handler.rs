@@ -88,8 +88,13 @@ impl HintHandler for CelestiaChainHintHandler {
                     blobstream_proof.storage_root,
                     blobstream_proof.storage_proof,
                     blobstream_proof.account_proof,
-                    blobstream_proof.l1_head,
+                    blobstream_proof.state_root,
                     blobstream_proof.blobstream_address,
+                    blobstream_proof.blobstream_balance,
+                    blobstream_proof.blobstream_nonce,
+                    blobstream_proof.blobstream_code_hash,
+                    blobstream_proof.block_header,
+                    cfg.single_host.l1_head,
                 )
                 .to_bytes()
                 .expect("failed to serialize celestia oracle payload");

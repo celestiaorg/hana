@@ -17,6 +17,7 @@ hana-celestia.workspace = true
 hana-blobstream.workspace = true
 
 alloy-primitives.workspace = true
+alloy-rpc-types-eth.workspace = true
 
 spin.workspace = true
 
