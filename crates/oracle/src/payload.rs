@@ -35,8 +35,6 @@ pub struct OraclePayload {
     pub blobstream_code_hash: B256,
     /// The block header to verify against the l1 head
     pub block_header: Header,
-    /// The storage root to verify against
-    pub l1_block_hash: B256,
 }
 
 impl OraclePayload {
@@ -56,7 +54,6 @@ impl OraclePayload {
         blobstream_nonce: u64,
         blobstream_code_hash: B256,
         block_header: Header,
-        l1_block_hash: B256,
     ) -> Self {
         Self {
             blob,
@@ -73,7 +70,6 @@ impl OraclePayload {
             blobstream_nonce,
             blobstream_code_hash,
             block_header,
-            l1_block_hash,
         }
     }
 

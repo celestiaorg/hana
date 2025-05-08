@@ -10,7 +10,7 @@ use hana_celestia::CelestiaProvider;
 use kona_preimage::errors::PreimageOracleError;
 use kona_preimage::{CommsClient, PreimageKey, PreimageKeyType};
 use kona_proof::errors::OracleProviderError;
-use kona_proof::Hint;
+use kona_proof::{BootInfo, Hint};
 use tracing::info;
 
 use crate::hint::HintWrapper;
@@ -39,7 +39,6 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
         encoded.extend_from_slice(commitment.hash());
 
         // Perform Inclusion checks against the data root
-
         let hint = Hint::new(HintWrapper::CelestiaDA, encoded.clone());
 
         hint.send(&*self.oracle).await?;
@@ -55,7 +54,12 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
         let payload = OraclePayload::from_bytes(&oracle_result)
             .expect("Failed to deserialize Celestia Oracle Payload");
 
-        // Verify the data commitment exists in storage against the L1 block hash.
+        // Load the boot info from the oracle.
+        // *Security Note*: This BootInfo must be committed to in the program that is verified on-chain. The l1Head
+        // must be verified to match a blockhash on the blockchain where this program is being verified.
+        let boot = BootInfo::load(self.oracle.as_ref()).await?;
+
+        // Verify the data commitment exists in storage on the supplied L1 block hash.
         verify_data_commitment_storage(
             payload.storage_root,
             payload.storage_proof,
@@ -67,7 +71,7 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
             payload.blobstream_nonce,
             payload.blobstream_code_hash,
             payload.block_header,
-            payload.l1_block_hash,
+            boot.l1_head,
         )
         .expect("Failed to verify data commitment against Blobstream storage slot");
 
