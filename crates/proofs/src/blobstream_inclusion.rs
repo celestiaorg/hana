@@ -5,6 +5,7 @@ use alloy_rpc_types_eth::{
     BlockId, BlockNumberOrTag, Filter, FilterBlockOption, FilterSet, Header, RpcBlockHash,
 };
 use alloy_sol_types::SolEvent;
+use anyhow::ensure;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
 use celestia_types::Blob;
 use hana_blobstream::blobstream::{
@@ -12,6 +13,8 @@ use hana_blobstream::blobstream::{
     BlobstreamProof, SP1Blobstream, SP1BlobstreamDataCommitmentStored, DATA_COMMITMENTS_SLOT,
 };
 use tracing::info;
+
+use crate::types::BlobstreamChainIds;
 
 // Geth has a default of 5000 block limit for filters
 const FILTER_BLOCK_RANGE: u64 = 5000;
@@ -104,7 +107,6 @@ pub async fn get_blobstream_proof(
     l1_head: FixedBytes<32>,
     height: u64,
     blob: Blob,
-    blobstream_address: Address,
 ) -> Result<BlobstreamProof, anyhow::Error> {
     let l1_block = l1_provider.get_block_by_hash(l1_head).await?.unwrap();
 
@@ -113,6 +115,11 @@ pub async fn get_blobstream_proof(
     let state_root = l1_block.header.state_root;
 
     let block_header = l1_block.header;
+    let chain_id = l1_provider.get_chain_id().await?;
+
+    let blobstream_address = BlobstreamChainIds::from_u64(chain_id)
+        .unwrap()
+        .blostream_address();
     // Fetch the block's data root
     let header = celestia_node.header_get_by_height(height).await?;
 
@@ -183,6 +190,13 @@ pub async fn get_blobstream_proof(
         .get_proof(blobstream_address, vec![slot_b256])
         .block_id(block_id)
         .await?;
+
+    ensure!(
+        proof_response.address == blobstream_address,
+        "storage proof address does not match blobstream address"
+    );
+
+    // get blobstream address from L1 Provider, check against the proof and also verify in program
 
     let proof_bytes: Vec<Bytes> = proof_response
         .storage_proof

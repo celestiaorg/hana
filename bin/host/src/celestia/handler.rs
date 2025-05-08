@@ -75,7 +75,6 @@ impl HintHandler for CelestiaChainHintHandler {
                     cfg.single_host.l1_head,
                     height,
                     blob,
-                    providers.celestia.blobstream_address,
                 )
                 .await?;
 
