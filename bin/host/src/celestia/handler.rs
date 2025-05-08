@@ -78,23 +78,9 @@ impl HintHandler for CelestiaChainHintHandler {
                 )
                 .await?;
 
-                let payload = OraclePayload::new(
-                    Bytes::from(data),
-                    blobstream_proof.data_root,
-                    blobstream_proof.data_commitment,
-                    blobstream_proof.data_root_tuple_proof,
-                    blobstream_proof.share_proof,
-                    blobstream_proof.proof_nonce,
-                    blobstream_proof.storage_root,
-                    blobstream_proof.storage_proof,
-                    blobstream_proof.account_proof,
-                    blobstream_proof.blobstream_balance,
-                    blobstream_proof.blobstream_nonce,
-                    blobstream_proof.blobstream_code_hash,
-                    blobstream_proof.block_header,
-                )
-                .to_bytes()
-                .expect("failed to serialize celestia oracle payload");
+                let payload = OraclePayload::new(Bytes::from(data), blobstream_proof)
+                    .to_bytes()
+                    .expect("failed to serialize celestia oracle payload");
 
                 let mut kv_lock = kv.write().await;
 
