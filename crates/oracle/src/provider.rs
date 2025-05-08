@@ -64,7 +64,7 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
         // Get the expected blobstream address for the chain id.
         let expected_blobstream_address =
             BlobstreamChainIds::from_u64(boot.rollup_config.l1_chain_id)
-                .expect("Invalid chain id")
+                .expect("No canonical Blobstream address found for chain id")
                 .blostream_address();
 
         // Verify the data commitment exists in storage on the supplied L1 block hash.
