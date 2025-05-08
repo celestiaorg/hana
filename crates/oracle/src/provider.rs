@@ -5,7 +5,9 @@ use alloc::vec::Vec;
 use alloy_primitives::{keccak256, Bytes};
 use async_trait::async_trait;
 use celestia_types::Commitment;
-use hana_blobstream::blobstream::{encode_data_root_tuple, verify_data_commitment_storage};
+use hana_blobstream::blobstream::{
+    encode_data_root_tuple, verify_data_commitment_storage, BlobstreamChainIds,
+};
 use hana_celestia::CelestiaProvider;
 use kona_preimage::errors::PreimageOracleError;
 use kona_preimage::{CommsClient, PreimageKey, PreimageKeyType};
@@ -59,6 +61,12 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
         // must be verified to match a blockhash on the blockchain where this program is being verified.
         let boot = BootInfo::load(self.oracle.as_ref()).await?;
 
+        // Get the expected blobstream address for the chain id.
+        let expected_blobstream_address =
+            BlobstreamChainIds::from_u64(boot.rollup_config.l1_chain_id)
+                .expect("Invalid chain id")
+                .blostream_address();
+
         // Verify the data commitment exists in storage on the supplied L1 block hash.
         verify_data_commitment_storage(
             payload.storage_root,
@@ -66,7 +74,7 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
             payload.account_proof,
             payload.proof_nonce,
             payload.data_commitment,
-            payload.blobstream_address,
+            expected_blobstream_address,
             payload.blobstream_balance,
             payload.blobstream_nonce,
             payload.blobstream_code_hash,

@@ -10,11 +10,10 @@ use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClie
 use celestia_types::Blob;
 use hana_blobstream::blobstream::{
     calculate_mapping_slot, encode_data_root_tuple, verify_data_commitment_storage,
-    BlobstreamProof, SP1Blobstream, SP1BlobstreamDataCommitmentStored, DATA_COMMITMENTS_SLOT,
+    BlobstreamChainIds, BlobstreamProof, SP1Blobstream, SP1BlobstreamDataCommitmentStored,
+    DATA_COMMITMENTS_SLOT,
 };
 use tracing::info;
-
-use crate::types::BlobstreamChainIds;
 
 // Geth has a default of 5000 block limit for filters
 const FILTER_BLOCK_RANGE: u64 = 5000;
@@ -230,7 +229,6 @@ pub async fn get_blobstream_proof(
                 proof_bytes,
                 proof_response.account_proof,
                 state_root,
-                blobstream_address,
                 blobstream_balance,
                 blobstream_nonce,
                 blobstream_code_hash,

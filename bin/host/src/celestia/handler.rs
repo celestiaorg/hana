@@ -88,7 +88,6 @@ impl HintHandler for CelestiaChainHintHandler {
                     blobstream_proof.storage_root,
                     blobstream_proof.storage_proof,
                     blobstream_proof.account_proof,
-                    blobstream_proof.blobstream_address,
                     blobstream_proof.blobstream_balance,
                     blobstream_proof.blobstream_nonce,
                     blobstream_proof.blobstream_code_hash,
