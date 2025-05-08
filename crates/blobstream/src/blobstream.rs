@@ -1,7 +1,7 @@
 use std::boxed::Box;
 
 use alloc::vec::Vec;
-use alloy_primitives::{aliases::B224, keccak256, Address, Bytes, FixedBytes, B256, U256};
+use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256, U256};
 use alloy_rpc_types_eth::Header;
 use alloy_sol_types::sol;
 use alloy_trie::{

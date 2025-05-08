@@ -1,6 +1,4 @@
-use std::str::FromStr;
-
-use alloy_primitives::Address;
+use alloy_primitives::{address, Address};
 
 pub enum BlobstreamChainIds {
     // Mainnets
