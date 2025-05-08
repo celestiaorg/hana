@@ -11,6 +11,7 @@ alloy-sol-types.workspace = true
 alloy-trie.workspace = true
 alloy-contract.workspace = true
 alloy-rlp.workspace = true
+alloy-chains.workspace = true
 alloy-rpc-types-eth.workspace = true
 
 bincode.workspace = true

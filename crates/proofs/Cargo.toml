@@ -11,6 +11,7 @@ alloy-primitives.workspace = true
 alloy-rpc-types-eth.workspace = true
 alloy-sol-types.workspace = true
 alloy-provider.workspace = true
+alloy-chains.workspace = true
 
 tracing.workspace = true
 celestia-types.workspace = true

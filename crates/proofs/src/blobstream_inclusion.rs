@@ -1,4 +1,5 @@
 use alloc::{boxed::Box, vec::Vec};
+use alloy_chains::{NamedChain, NamedChainIter};
 use alloy_primitives::{keccak256, Address, Bytes, FixedBytes, B256};
 use alloy_provider::{Provider, RootProvider};
 use alloy_rpc_types_eth::{
@@ -9,9 +10,9 @@ use anyhow::ensure;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
 use celestia_types::Blob;
 use hana_blobstream::blobstream::{
-    calculate_mapping_slot, encode_data_root_tuple, verify_data_commitment_storage,
-    BlobstreamChainIds, BlobstreamProof, SP1Blobstream, SP1BlobstreamDataCommitmentStored,
-    DATA_COMMITMENTS_SLOT,
+    blostream_address, calculate_mapping_slot, encode_data_root_tuple,
+    verify_data_commitment_storage, BlobstreamProof, SP1Blobstream,
+    SP1BlobstreamDataCommitmentStored, DATA_COMMITMENTS_SLOT,
 };
 use tracing::info;
 
@@ -116,9 +117,9 @@ pub async fn get_blobstream_proof(
     let block_header = l1_block.header;
     let chain_id = l1_provider.get_chain_id().await?;
 
-    let blobstream_address = BlobstreamChainIds::from_u64(chain_id)
-        .unwrap()
-        .blostream_address();
+    let blobstream_address =
+        blostream_address(chain_id).expect("No canonical Blobstream address found for chain id");
+
     // Fetch the block's data root
     let header = celestia_node.header_get_by_height(height).await?;
 

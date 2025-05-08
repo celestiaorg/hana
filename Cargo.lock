@@ -2567,6 +2567,7 @@ dependencies = [
 name = "hana-blobstream"
 version = "0.1.0"
 dependencies = [
+ "alloy-chains",
  "alloy-contract",
  "alloy-primitives",
  "alloy-rlp",
@@ -2670,6 +2671,7 @@ dependencies = [
 name = "hana-proofs"
 version = "0.1.0"
 dependencies = [
+ "alloy-chains",
  "alloy-primitives",
  "alloy-provider",
  "alloy-rpc-types-eth",

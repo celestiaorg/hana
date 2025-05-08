@@ -50,6 +50,8 @@ alloy-rpc-types-beacon = { version = "0.15.7", default-features = false }
 alloy-contract = { version = "0.15.7", default-features = false }
 alloy-sol-types = { version = "1.0.0", default-features = false }
 
+alloy-chains = { version = "0.2.0", default-features = false }
+
 # OP Alloy
 op-alloy-network = { version = "0.15.1", default-features = false }
 op-alloy-consensus = { version = "0.15.1", default-features = false }
