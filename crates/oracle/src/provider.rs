@@ -73,9 +73,12 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
 
         verify_data_commitment_storage(
             payload.storage_root,
+            payload.l1_head,
             payload.storage_proof,
+            payload.account_proof,
             payload.proof_nonce,
             payload.data_commitment,
+            payload.blobstream_address,
         )
         .expect("Failed to verify data commitment against Blobstream storage slot");
 
