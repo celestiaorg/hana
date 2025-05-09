@@ -50,5 +50,5 @@ default = ["celestia"]
 celestia = []
 
 [[bin]]
-name = "kona-host"
+name = "hana-host"
 path = "src/bin/host.rs"

@@ -6,67 +6,8 @@ set fallback := true
 default:
   @just --list
 
-# Run the client program on asterisc with the host in detached server mode.
-run-client-asterisc block_number l1_rpc l1_beacon_rpc l2_rpc rollup_node_rpc verbosity='':
-  #!/usr/bin/env bash
-
-  L1_NODE_ADDRESS="{{l1_rpc}}"
-  L1_BEACON_ADDRESS="{{l1_beacon_rpc}}"
-  L2_NODE_ADDRESS="{{l2_rpc}}"
-  OP_NODE_ADDRESS="{{rollup_node_rpc}}"
-
-  HOST_BIN_PATH="./target/release/kona-host"
-  CLIENT_BIN_PATH="./target/riscv64imac-unknown-none-elf/release-client-lto/kona"
-  STATE_PATH="./state.bin.gz"
-
-  CLAIMED_L2_BLOCK_NUMBER={{block_number}}
-  echo "Fetching configuration for block #$CLAIMED_L2_BLOCK_NUMBER..."
-
-  # Get output root for block
-  CLAIMED_L2_OUTPUT_ROOT=$(cast rpc --rpc-url $OP_NODE_ADDRESS "optimism_outputAtBlock" $(cast 2h $CLAIMED_L2_BLOCK_NUMBER) | jq -r .outputRoot)
-
-  # Get the info for the previous block
-  AGREED_L2_OUTPUT_ROOT=$(cast rpc --rpc-url $OP_NODE_ADDRESS "optimism_outputAtBlock" $(cast 2h $((CLAIMED_L2_BLOCK_NUMBER - 1))) | jq -r .outputRoot)
-  AGREED_L2_HEAD_HASH=$(cast block --rpc-url $L2_NODE_ADDRESS $((CLAIMED_L2_BLOCK_NUMBER - 1)) --json | jq -r .hash)
-  L1_ORIGIN_NUM=$(cast rpc --rpc-url $OP_NODE_ADDRESS "optimism_outputAtBlock" $(cast 2h $((CLAIMED_L2_BLOCK_NUMBER - 1))) | jq -r .blockRef.l1origin.number)
-  L1_HEAD=$(cast block --rpc-url $L1_NODE_ADDRESS $((L1_ORIGIN_NUM + 30)) --json | jq -r .hash)
-  L2_CHAIN_ID=$(cast chain-id --rpc-url $L2_NODE_ADDRESS)
-
-  # Move to the workspace root
-  cd $(git rev-parse --show-toplevel)
-
-  echo "Building client program for RISC-V target..."
-  just build-asterisc --bin kona --profile release-client-lto
-
-  echo "Loading client program into Asterisc state format..."
-  asterisc load-elf --path=$CLIENT_BIN_PATH
-
-  echo "Building host program for native target..."
-  cargo build --bin kona-host --release
-
-  echo "Running asterisc"
-  asterisc run \
-    --info-at '%10000000' \
-    --proof-at never \
-    --input $STATE_PATH \
-    -- \
-    $HOST_BIN_PATH \
-    single \
-    --l1-head $L1_HEAD \
-    --agreed-l2-head-hash $AGREED_L2_HEAD_HASH \
-    --claimed-l2-output-root $CLAIMED_L2_OUTPUT_ROOT \
-    --agreed-l2-output-root $AGREED_L2_OUTPUT_ROOT \
-    --claimed-l2-block-number $CLAIMED_L2_BLOCK_NUMBER \
-    --l2-chain-id $L2_CHAIN_ID \
-    --l1-node-address $L1_NODE_ADDRESS \
-    --l1-beacon-address $L1_BEACON_ADDRESS \
-    --l2-node-address $L2_NODE_ADDRESS \
-    --server \
-    --data-dir ./data \
-    {{verbosity}}
-
 # Run the client program natively with the host program attached.
-run-client-native block_number l1_rpc l1_beacon_rpc l2_rpc rollup_node_rpc rollup_config_path='' verbosity='':
+run-client-native block_number l1_rpc l1_beacon_rpc l2_rpc rollup_node_rpc celestia_node namespace rollup_config_path='' verbosity='':
   #!/usr/bin/env bash
   set -o errexit -o nounset -o pipefail
 
@@ -74,6 +15,8 @@ run-client-native block_number l1_rpc l1_beacon_rpc l2_rpc rollup_node_rpc rollu
   L1_BEACON_ADDRESS="{{l1_beacon_rpc}}"
   L2_NODE_ADDRESS="{{l2_rpc}}"
   OP_NODE_ADDRESS="{{rollup_node_rpc}}"
+  CELESTIA_NODE="{{celestia_node}}"
+  NAMESPACE="{{namespace}}"
 
   L2_CHAIN_ID=$(cast chain-id --rpc-url $L2_NODE_ADDRESS)
   if [ -z "{{rollup_config_path}}" ]; then
@@ -98,8 +41,8 @@ run-client-native block_number l1_rpc l1_beacon_rpc l2_rpc rollup_node_rpc rollu
   cd $(git rev-parse --show-toplevel)
 
   echo "Running host program with native client program..."
-  cargo r --bin kona-host --release -- \
-    single \
+  RUST_LOG=trace cargo r --bin hana-host --release -- \
+    celestia \
     --l1-head $L1_HEAD \
     --agreed-l2-head-hash $AGREED_L2_HEAD_HASH \
     --claimed-l2-output-root $CLAIMED_L2_OUTPUT_ROOT \
@@ -108,6 +51,8 @@ run-client-native block_number l1_rpc l1_beacon_rpc l2_rpc rollup_node_rpc rollu
     --l1-node-address $L1_NODE_ADDRESS \
     --l1-beacon-address $L1_BEACON_ADDRESS \
     --l2-node-address $L2_NODE_ADDRESS \
+    --celestia-conn $CELESTIA_NODE \
+    --celestia-namespace $NAMESPACE \
     --native \
     --data-dir ./data \
     $CHAIN_ID_OR_ROLLUP_CONFIG_ARG \
@@ -128,7 +73,7 @@ run-client-native-offline block_number l2_claim l2_output_root l2_head l1_head l
   cd $(git rev-parse --show-toplevel)
 
   echo "Running host program with native client program..."
-  cargo r --bin kona-host -- \
+  cargo r --bin hana-host -- \
     single \
     --l1-head $L1_HEAD \
     --agreed-l2-head-hash $AGREED_L2_HEAD_HASH \
