@@ -3,7 +3,7 @@ use alloy_consensus::Sealed;
 use alloy_evm::{EvmFactory, FromRecoveredTx, FromTxWithEncoded};
 use alloy_primitives::B256;
 use core::fmt::Debug;
-use hana_celestia::{CelestiaDADataSource, CelestiaDASource, CelestiaProvider};
+use hana_celestia::{CelestiaDADataSource, CelestiaDASource};
 use hana_oracle::provider::OracleCelestiaProvider;
 use kona_client::single::FaultProofProgramError;
 use kona_derive::sources::EthereumDataSource;
