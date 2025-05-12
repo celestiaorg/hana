@@ -11,11 +11,13 @@ kona-driver.workspace = true
 kona-executor.workspace = true
 kona-std-fpvm.workspace = true
 kona-std-fpvm-proc.workspace = true
+kona-derive.workspace = true
 
 cfg-if.workspace = true
 
 alloy-primitives.workspace = true
 
+hana-celestia.workspace = true
 hana-oracle.workspace = true
 
 tracing.workspace = true
