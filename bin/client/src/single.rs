@@ -3,18 +3,19 @@ use alloy_consensus::Sealed;
 use alloy_evm::{EvmFactory, FromRecoveredTx, FromTxWithEncoded};
 use alloy_primitives::B256;
 use core::fmt::Debug;
-use hana_oracle::pipeline::OraclePipeline;
+use hana_celestia::{CelestiaDADataSource, CelestiaDASource, CelestiaProvider};
 use hana_oracle::provider::OracleCelestiaProvider;
 use kona_client::single::FaultProofProgramError;
+use kona_derive::sources::EthereumDataSource;
 use kona_driver::Driver;
 use kona_executor::TrieDBProvider;
 use kona_preimage::{CommsClient, HintWriterClient, PreimageKey, PreimageOracleClient};
 use kona_proof::{
     errors::OracleProviderError,
     executor::KonaExecutor,
-    l1::{OracleBlobProvider, OracleL1ChainProvider},
+    l1::{OracleBlobProvider, OracleL1ChainProvider, OraclePipeline},
     l2::OracleL2ChainProvider,
-    sync::new_pipeline_cursor,
+    sync::new_oracle_pipeline_cursor,
     BootInfo, CachingOracle, HintType,
 };
 use op_alloy_consensus::OpTxEnvelope;
@@ -58,7 +59,6 @@ where
     let mut l2_provider =
         OracleL2ChainProvider::new(safe_head_hash, rollup_config.clone(), oracle.clone());
     let beacon = OracleBlobProvider::new(oracle.clone());
-    let celestia_provider = OracleCelestiaProvider::new(oracle.clone());
 
     // Fetch the safe head's block header.
     let safe_head = l2_provider
@@ -95,7 +95,7 @@ where
     ////////////////////////////////////////////////////////////////
 
     // Create a new derivation driver with the given boot information and oracle.
-    let cursor = new_pipeline_cursor(
+    let cursor = new_oracle_pipeline_cursor(
         rollup_config.as_ref(),
         safe_head,
         &mut l1_provider,
@@ -104,14 +104,18 @@ where
     .await?;
     l2_provider.set_cursor(cursor.clone());
 
+    let ethereum_data_source =
+        EthereumDataSource::new_from_parts(l1_provider.clone(), beacon, &rollup_config);
+    let celestia_data_source = CelestiaDASource::new(OracleCelestiaProvider::new(oracle.clone()));
+    let da_provider = CelestiaDADataSource::new(ethereum_data_source, celestia_data_source);
+
     let pipeline = OraclePipeline::new(
         rollup_config.clone(),
         cursor.clone(),
         oracle.clone(),
-        beacon,
+        da_provider,
         l1_provider.clone(),
         l2_provider.clone(),
-        celestia_provider.clone(),
     )
     .await?;
     let executor = KonaExecutor::new(
