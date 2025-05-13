@@ -9,9 +9,8 @@ use anyhow::ensure;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
 use celestia_types::Blob;
 use hana_blobstream::blobstream::{
-    blostream_address, calculate_mapping_slot, encode_data_root_tuple,
-    verify_data_commitment_storage, BlobstreamProof, SP1Blobstream,
-    SP1BlobstreamDataCommitmentStored, DATA_COMMITMENTS_SLOT,
+    blostream_address, calculate_mapping_slot, encode_data_root_tuple, verify_data_commitment,
+    BlobstreamProof, SP1Blobstream, SP1BlobstreamDataCommitmentStored, DATA_COMMITMENTS_SLOT,
 };
 use tracing::info;
 
@@ -203,7 +202,7 @@ pub async fn get_blobstream_proof(
         .flat_map(|proof| proof.proof.into_iter().map(|bytes| bytes))
         .collect();
 
-    match verify_data_commitment_storage(
+    match verify_data_commitment(
         proof_response.storage_hash,
         proof_bytes.clone(),
         proof_response.account_proof.clone(),
@@ -217,7 +216,7 @@ pub async fn get_blobstream_proof(
         l1_head,
     ) {
         Ok(_) => {
-            println!("Succesfully verified storage proof for Blobstream data commitment");
+            println!("Succesfully verified Blobstream data commitment");
 
             return Ok(BlobstreamProof::new(
                 data_root,
@@ -235,6 +234,6 @@ pub async fn get_blobstream_proof(
                 block_header,
             ));
         }
-        Err(err) => anyhow::bail!("Error verifying storage proof {}", err),
+        Err(err) => anyhow::bail!("Error verifying data commitment {}", err),
     }
 }
