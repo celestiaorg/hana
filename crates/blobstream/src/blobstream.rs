@@ -5,10 +5,8 @@ use alloy_chains::NamedChain;
 use alloy_primitives::{address, keccak256, Address, Bytes, FixedBytes, B256, U256};
 use alloy_rpc_types_eth::Header;
 use alloy_sol_types::sol;
-use alloy_trie::{
-    proof::{verify_proof, ProofVerificationError},
-    Nibbles, TrieAccount,
-};
+use alloy_trie::{proof::verify_proof, Nibbles, TrieAccount};
+use anyhow::{anyhow, Result};
 use celestia_types::{hash::Hash, MerkleProof, ShareProof};
 use serde::{Deserialize, Serialize};
 
@@ -169,7 +167,7 @@ pub fn encode_data_root_tuple(height: u64, data_root: &Hash) -> Vec<u8> {
 ///    This confirms the data commitment was properly recorded in the Blobstream contract.
 ///
 /// Security Note: This function assumes the l1_block_hash and expected_blobsstream_address come from a secure source.
-pub fn verify_data_commitment_storage(
+pub fn verify_data_commitment(
     storage_root: B256,
     storage_proof: Vec<Bytes>,
     account_proof: Vec<Bytes>,
@@ -181,7 +179,7 @@ pub fn verify_data_commitment_storage(
     blobstream_code_hash: B256,
     block_header: Header,
     l1_block_hash: B256,
-) -> Result<(), ProofVerificationError> {
+) -> Result<()> {
     // Verify the block header hash matches the l1 head.
     let block_hash = block_header.hash_slow();
     assert!(
@@ -203,13 +201,14 @@ pub fn verify_data_commitment_storage(
         blobstream_address_nibbles,
         Some(alloy_rlp::encode(&account)),
         &account_proof,
-    )?;
+    )
+    .map_err(|e| anyhow!("Account proof verification failed: {}", e))?;
 
     // Get the nibbles for the storage slot for state_dataCommitments[nonce]
-    let data_commitment_slot_nibbles = Nibbles::unpack(calculate_mapping_slot(
+    let data_commitment_slot_nibbles = Nibbles::unpack(keccak256(calculate_mapping_slot(
         DATA_COMMITMENTS_SLOT,
         commitment_nonce,
-    ));
+    )));
 
     // Handle the RLP encoding by modifying the expected result
     // Add the 0xa0 prefix to match how it's stored on-chain
@@ -217,12 +216,14 @@ pub fn verify_data_commitment_storage(
     expected_with_prefix.push(0xa0); // Add the RLP prefix
     expected_with_prefix.extend_from_slice(expected_commitment.as_slice());
 
+    // Verify storage proof
     verify_proof(
         storage_root,
         data_commitment_slot_nibbles,
         Some(expected_with_prefix),
         &storage_proof,
-    )?;
+    )
+    .map_err(|e| anyhow!("Storage proof verification failed: {}", e))?;
 
     Ok(())
 }
@@ -251,7 +252,9 @@ pub fn blostream_address(chain_id: u64) -> Option<Address> {
             NamedChain::Base => Some(address!("0xA83ca7775Bc2889825BcDeDfFa5b758cf69e8794")),
             NamedChain::Scroll => Some(address!("0x5008fa5CC3397faEa90fcde71C35945db6822218")),
             NamedChain::Sepolia => Some(address!("0xF0c6429ebAB2e7DC6e05DaFB61128bE21f13cb1e")),
-            NamedChain::ArbitrumSepolia => Some(address!("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2")),
+            NamedChain::ArbitrumSepolia => {
+                Some(address!("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2"))
+            }
             NamedChain::BaseSepolia => Some(address!("0xc3e209eb245Fd59c8586777b499d6A665DF3ABD2")),
             NamedChain::Holesky => Some(address!("0x315A044cb95e4d44bBf6253585FbEbcdB6fb41ef")),
             _ => None,

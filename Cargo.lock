@@ -2574,6 +2574,7 @@ dependencies = [
  "alloy-rpc-types-eth",
  "alloy-sol-types",
  "alloy-trie",
+ "anyhow",
  "bincode",
  "celestia-types",
  "serde",
