@@ -65,7 +65,7 @@ where
             return Ok(());
         }
 
-        info!(target: "celestia-source", "fetching blobs rom celestia fetcher");
+        info!(target: "celestia-source", "fetching blobs from celestia fetcher");
         let blob = self.celestia_fetcher.blob_get(height, commitment).await;
         match blob {
             Ok(blob) => {
