@@ -12,7 +12,7 @@ alloy-trie.workspace = true
 alloy-contract.workspace = true
 alloy-rlp.workspace = true
 alloy-chains.workspace = true
-alloy-rpc-types-eth.workspace = true
+alloy-consensus.workspace = true
 
 anyhow.workspace = true
 bincode.workspace = true

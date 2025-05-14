@@ -2568,10 +2568,10 @@ name = "hana-blobstream"
 version = "0.1.0"
 dependencies = [
  "alloy-chains",
+ "alloy-consensus",
  "alloy-contract",
  "alloy-primitives",
  "alloy-rlp",
- "alloy-rpc-types-eth",
  "alloy-sol-types",
  "alloy-trie",
  "anyhow",
