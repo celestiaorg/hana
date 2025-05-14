@@ -212,7 +212,7 @@ pub async fn get_blobstream_proof(
         blobstream_balance,
         blobstream_nonce,
         blobstream_code_hash,
-        block_header.clone(),
+        block_header.inner.clone(),
         l1_head,
     ) {
         Ok(_) => {
@@ -231,7 +231,7 @@ pub async fn get_blobstream_proof(
                 blobstream_balance,
                 blobstream_nonce,
                 blobstream_code_hash,
-                block_header,
+                block_header.inner.clone(),
             ));
         }
         Err(err) => anyhow::bail!("Error verifying data commitment {}", err),
