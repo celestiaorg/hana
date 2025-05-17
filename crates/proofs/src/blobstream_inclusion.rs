@@ -22,15 +22,15 @@ pub async fn find_data_commitment(
     celestia_height: u64,
     blobstream_address: Address,
     eth_provider: &RootProvider,
+    l1_head_block_number: u64,
 ) -> Result<SP1BlobstreamDataCommitmentStored, Box<dyn core::error::Error>> {
-    let eth_block_height = eth_provider.get_block_number().await?;
     // Calculate event signature manually for reliability
     let event_signature = "DataCommitmentStored(uint256,uint64,uint64,bytes32)";
     let event_selector = keccak256(event_signature.as_bytes());
     let topic0: FilterSet<B256> = vec![event_selector.into()].into();
 
     // Start from the given Ethereum block height and scan backwards
-    let mut end = eth_block_height;
+    let mut end = l1_head_block_number;
     let mut start = if end > FILTER_BLOCK_RANGE {
         end - FILTER_BLOCK_RANGE
     } else {
@@ -166,7 +166,7 @@ pub async fn get_blobstream_proof(
         .verify(data_root)
         .expect("failed to verify share proof against data root");
 
-    let event = find_data_commitment(height, blobstream_address, l1_provider)
+    let event = find_data_commitment(height, blobstream_address, l1_provider, block_header.number)
         .await
         .unwrap();
 
