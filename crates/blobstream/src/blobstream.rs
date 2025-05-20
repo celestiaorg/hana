@@ -2,8 +2,8 @@ use std::boxed::Box;
 
 use alloc::vec::Vec;
 use alloy_chains::NamedChain;
+use alloy_consensus::Header;
 use alloy_primitives::{address, keccak256, Address, Bytes, FixedBytes, B256, U256};
-use alloy_rpc_types_eth::Header;
 use alloy_sol_types::sol;
 use alloy_trie::{proof::verify_proof, Nibbles, TrieAccount};
 use anyhow::{anyhow, Result};
