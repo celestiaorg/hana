@@ -244,7 +244,7 @@ pub fn calculate_mapping_slot(mapping_slot: u32, key: U256) -> B256 {
 /// The canonical Blobstream address for the given chain id.
 ///
 /// Source: https://docs.celestia.org/how-to-guides/blobstream#deployed-contracts
-pub fn blostream_address(chain_id: u64) -> Option<Address> {
+pub fn blobstream_address(chain_id: u64) -> Option<Address> {
     if let Ok(chain) = NamedChain::try_from(chain_id) {
         match chain {
             NamedChain::Mainnet => Some(address!("0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe")),
