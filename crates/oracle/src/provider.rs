@@ -6,7 +6,7 @@ use alloy_primitives::{keccak256, Bytes};
 use async_trait::async_trait;
 use celestia_types::Commitment;
 use hana_blobstream::blobstream::{
-    blostream_address, encode_data_root_tuple, verify_data_commitment,
+    blobstream_address, encode_data_root_tuple, verify_data_commitment,
 };
 use hana_celestia::CelestiaProvider;
 use kona_preimage::errors::PreimageOracleError;
@@ -62,7 +62,7 @@ impl<T: CommsClient + Sync + Send> CelestiaProvider for OracleCelestiaProvider<T
         let boot = BootInfo::load(self.oracle.as_ref()).await?;
 
         // Get the expected blobstream address for the chain id.
-        let expected_blobstream_address = blostream_address(boot.rollup_config.l1_chain_id)
+        let expected_blobstream_address = blobstream_address(boot.rollup_config.l1_chain_id)
             .expect("No canonical Blobstream address found for chain id");
 
         // Verify the data commitment exists in storage on the supplied L1 block hash.

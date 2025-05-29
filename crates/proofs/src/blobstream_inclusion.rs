@@ -9,7 +9,7 @@ use anyhow::ensure;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
 use celestia_types::Blob;
 use hana_blobstream::blobstream::{
-    blostream_address, calculate_mapping_slot, encode_data_root_tuple, verify_data_commitment,
+    blobstream_address, calculate_mapping_slot, encode_data_root_tuple, verify_data_commitment,
     BlobstreamProof, SP1Blobstream, SP1BlobstreamDataCommitmentStored, DATA_COMMITMENTS_SLOT,
 };
 use tracing::info;
@@ -116,7 +116,7 @@ pub async fn get_blobstream_proof(
     let chain_id = l1_provider.get_chain_id().await?;
 
     let blobstream_address =
-        blostream_address(chain_id).expect("No canonical Blobstream address found for chain id");
+        blobstream_address(chain_id).expect("No canonical Blobstream address found for chain id");
 
     // Fetch the block's data root
     let header = celestia_node.header_get_by_height(height).await?;
