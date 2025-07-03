@@ -6,7 +6,7 @@ use alloc::vec::Vec;
 use alloy_primitives::Bytes;
 use celestia_types::Commitment;
 use kona_derive::{
-    errors::{BlobProviderError, PipelineError},
+    errors::{PipelineError, PipelineErrorKind},
     types::PipelineResult,
 };
 
@@ -20,8 +20,6 @@ where
     pub celestia_fetcher: C,
     /// Celestia Blobs
     pub data: Vec<Bytes>,
-    /// Whether the source is open.
-    pub open: bool,
 }
 
 impl<C> CelestiaDASource<C>
@@ -33,7 +31,6 @@ where
         Self {
             celestia_fetcher,
             data: Vec::new(),
-            open: false,
         }
     }
 
@@ -52,7 +49,6 @@ where
     /// Clears the source's data
     pub fn clear(&mut self) {
         self.data.clear();
-        self.open = false;
     }
 
     /// Loads blob data into the source if it is not open.
@@ -60,25 +56,31 @@ where
         &mut self,
         height: u64,
         commitment: Commitment,
-    ) -> Result<(), BlobProviderError> {
-        if self.open {
-            return Ok(());
-        }
-
+    ) -> Result<(), PipelineErrorKind> {
         info!(target: "celestia-source", "fetching blobs from celestia fetcher");
         let blob = self.celestia_fetcher.blob_get(height, commitment).await;
         match blob {
             Ok(blob) => {
-                self.open = true;
                 self.data.push(blob.clone());
 
                 info!(target: "celestia-source", "load_blobs {:?}", self.data);
 
                 Ok(())
             }
-            Err(_) => {
-                self.open = true;
-                Ok(())
+            Err(e) => {
+                let pipeline_err: PipelineErrorKind = e.into();
+
+                match pipeline_err {
+                    PipelineErrorKind::Critical(pipeline_err) => {
+                        return Err(PipelineErrorKind::Critical(pipeline_err))
+                    }
+                    PipelineErrorKind::Temporary(pipeline_err) => {
+                        return Err(PipelineErrorKind::Temporary(pipeline_err))
+                    }
+                    PipelineErrorKind::Reset(pipeline_err) => {
+                        return Err(PipelineErrorKind::Reset(pipeline_err))
+                    }
+                }
             }
         }
     }

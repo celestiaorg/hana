@@ -73,8 +73,6 @@ pub struct BlobstreamProof {
     pub storage_proof: Vec<Bytes>,
     /// The account proof for the blobstream address
     pub account_proof: Vec<Bytes>,
-    /// The L1 state root hash to verify the account proof against
-    pub state_root: FixedBytes<32>,
     /// The balance to verify against the blobstream address
     pub blobstream_balance: U256,
     /// The nonce to verify against the blobstream address
@@ -96,7 +94,6 @@ impl BlobstreamProof {
         storage_root: B256,
         storage_proof: Vec<Bytes>,
         account_proof: Vec<Bytes>,
-        state_root: FixedBytes<32>,
         blobstream_balance: U256,
         blobstream_nonce: u64,
         blobstream_code_hash: B256,
@@ -111,7 +108,6 @@ impl BlobstreamProof {
             storage_root,
             storage_proof,
             account_proof,
-            state_root,
             blobstream_balance,
             blobstream_nonce,
             blobstream_code_hash,
@@ -244,7 +240,7 @@ pub fn calculate_mapping_slot(mapping_slot: u32, key: U256) -> B256 {
 /// The canonical Blobstream address for the given chain id.
 ///
 /// Source: https://docs.celestia.org/how-to-guides/blobstream#deployed-contracts
-pub fn blostream_address(chain_id: u64) -> Option<Address> {
+pub fn blobstream_address(chain_id: u64) -> Option<Address> {
     if let Ok(chain) = NamedChain::try_from(chain_id) {
         match chain {
             NamedChain::Mainnet => Some(address!("0x7Cf3876F681Dbb6EdA8f6FfC45D66B996Df08fAe")),

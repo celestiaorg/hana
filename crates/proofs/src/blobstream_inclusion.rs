@@ -7,9 +7,9 @@ use alloy_rpc_types_eth::{
 use alloy_sol_types::SolEvent;
 use anyhow::ensure;
 use celestia_rpc::{blobstream::BlobstreamClient, Client, HeaderClient, ShareClient};
-use celestia_types::Blob;
+use celestia_types::{Blob, DataAvailabilityHeader};
 use hana_blobstream::blobstream::{
-    blostream_address, calculate_mapping_slot, encode_data_root_tuple, verify_data_commitment,
+    blobstream_address, calculate_mapping_slot, encode_data_root_tuple, verify_data_commitment,
     BlobstreamProof, SP1Blobstream, SP1BlobstreamDataCommitmentStored, DATA_COMMITMENTS_SLOT,
 };
 use tracing::info;
@@ -18,6 +18,9 @@ use tracing::info;
 const FILTER_BLOCK_RANGE: u64 = 5000;
 
 /// Find the data commitment  that contains the given Celestia height by parsing event logs
+/// This function assumes that the l1_head_block_number is one such that the event for relaying
+/// the celestia_height in question has already passed, its up to implementation on how to do this,
+/// Example: https://github.com/succinctlabs/op-succinct/blob/46482d3f21eb435b4cffae6c80d14bf3cc1c6e19/utils/celestia/host/src/host.rs#L40C17-L40C98
 pub async fn find_data_commitment(
     celestia_height: u64,
     blobstream_address: Address,
@@ -110,13 +113,11 @@ pub async fn get_blobstream_proof(
 
     let block_id = BlockId::Hash(RpcBlockHash::from(B256::from(l1_head)));
 
-    let state_root = l1_block.header.state_root;
-
     let block_header = l1_block.header;
     let chain_id = l1_provider.get_chain_id().await?;
 
     let blobstream_address =
-        blostream_address(chain_id).expect("No canonical Blobstream address found for chain id");
+        blobstream_address(chain_id).expect("No canonical Blobstream address found for chain id");
 
     // Fetch the block's data root
     let header = celestia_node.header_get_by_height(height).await?;
@@ -145,15 +146,13 @@ pub async fn get_blobstream_proof(
         .await?;
 
     // celestia data root
+    let blob_index = match blob.index {
+        Some(index) => index,
+        None => anyhow::bail!("Could not get blob index for blobstream proof"),
+    };
     let data_root = header.dah.hash();
-
-    let eds_row_roots = header.dah.row_roots();
-    let eds_size: u64 = eds_row_roots.len().try_into().unwrap();
-    let ods_size: u64 = eds_size / 2;
-
-    let first_row_index: u64 = blob.index.unwrap() / eds_size;
-    let start_index = blob.index.unwrap() - (first_row_index * ods_size);
-    let end_index = start_index + blob.shares_len() as u64;
+    let (start_index, end_index) =
+        calculate_indices(header.dah.clone(), blob_index, blob.shares_len() as u64);
 
     let share_proof = celestia_node
         .share_get_range(&header, start_index, end_index)
@@ -162,9 +161,10 @@ pub async fn get_blobstream_proof(
         .proof;
 
     // validate the proof before placing it on the KV store
-    share_proof
-        .verify(data_root)
-        .expect("failed to verify share proof against data root");
+    match share_proof.verify(data_root) {
+        Ok(_) => info!("Celestia share proof succesfully verified!"),
+        Err(err) => return Err(err.into()),
+    }
 
     let event = find_data_commitment(height, blobstream_address, l1_provider, block_header.number)
         .await
@@ -227,13 +227,28 @@ pub async fn get_blobstream_proof(
                 proof_response.storage_hash.clone(),
                 proof_bytes,
                 proof_response.account_proof,
-                state_root,
                 blobstream_balance,
                 blobstream_nonce,
                 blobstream_code_hash,
                 block_header.inner.clone(),
             ));
         }
-        Err(err) => anyhow::bail!("Error verifying data commitment {}", err),
+        Err(err) => return Err(err.into()),
     }
+}
+
+fn calculate_indices(
+    data_availability_header: DataAvailabilityHeader,
+    blob_index: u64,
+    shares_length: u64,
+) -> (u64, u64) {
+    let eds_row_roots = data_availability_header.row_roots();
+    let eds_size: u64 = eds_row_roots.len().try_into().unwrap();
+    let ods_size: u64 = eds_size / 2;
+
+    let first_row_index: u64 = blob_index / eds_size;
+    let start_index = blob_index - (first_row_index * ods_size);
+    let end_index = start_index + shares_length;
+
+    (start_index, end_index)
 }
