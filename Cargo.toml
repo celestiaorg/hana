@@ -101,8 +101,8 @@ op-revm = { version = "5.0.1", default-features = false }
 alloy-op-evm = { version = "0.10.0", default-features = false }
 
 # Celestia
-celestia-types = { git = "https://github.com/eigerco/lumina", rev = "4751731" }
-celestia-rpc = { git = "https://github.com/eigerco/lumina", rev = "4751731" }
+celestia-types = "0.12.0"
+celestia-rpc = "0.11.2"
 jsonrpsee = "0.24.9"
 
 [profile.dev]
