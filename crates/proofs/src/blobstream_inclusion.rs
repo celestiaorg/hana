@@ -162,7 +162,7 @@ pub async fn get_blobstream_proof(
 
     // validate the proof before placing it on the KV store
     match share_proof.verify(data_root) {
-        Ok(_) => info!("Celestia share proof succesfully verified!"),
+        Ok(_) => info!("Celestia share proof successfully verified!"),
         Err(err) => return Err(err.into()),
     }
 
@@ -216,7 +216,7 @@ pub async fn get_blobstream_proof(
         l1_head,
     ) {
         Ok(_) => {
-            println!("Succesfully verified Blobstream data commitment");
+            println!("Successfully verified Blobstream data commitment");
 
             return Ok(BlobstreamProof::new(
                 data_root,
