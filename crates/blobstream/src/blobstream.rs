@@ -206,11 +206,16 @@ pub fn verify_data_commitment(
         commitment_nonce,
     )));
 
-    // Handle the RLP encoding by modifying the expected result
-    // Add the 0xa0 prefix to match how it's stored on-chain
-    let mut expected_with_prefix = Vec::with_capacity(33);
-    expected_with_prefix.push(0xa0); // Add the RLP prefix
-    expected_with_prefix.extend_from_slice(expected_commitment.as_slice());
+    // Drop leading zeros before encoding
+    let commitment_bytes = expected_commitment.as_slice();
+    let canonical_commitment = match commitment_bytes.iter().position(|byte| *byte != 0) {
+        Some(idx) => &commitment_bytes[idx..],
+        None => &[],
+    };
+    let expected_with_prefix = alloy_rlp::encode(canonical_commitment);
+
+    // Use canonical RLP encoding
+    let expected_rlp = alloy_rlp::encode(canonical_commitment);
 
     // Verify storage proof
     verify_proof(
