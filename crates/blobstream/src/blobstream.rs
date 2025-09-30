@@ -206,14 +206,11 @@ pub fn verify_data_commitment(
         commitment_nonce,
     )));
 
+    // Drop leading zeros before encoding
     let commitment_bytes = expected_commitment.as_slice();
-
-    // Find the first non-zero byte
-    let first_nonzero = commitment_bytes.iter().position(|&b| b != 0);
-
-    let canonical_commitment = match first_nonzero {
-        Some(idx) => &commitment_bytes[idx..], // Strip leading zeros
-        None => &[0u8][..],                    // All zeros case: use single zero byte
+    let canonical_commitment = match commitment_bytes.iter().position(|byte| *byte != 0) {
+        Some(idx) => &commitment_bytes[idx..],
+        None => &[],
     };
 
     // Use canonical RLP encoding
