@@ -206,17 +206,24 @@ pub fn verify_data_commitment(
         commitment_nonce,
     )));
 
-    // Handle the RLP encoding by modifying the expected result
-    // Add the 0xa0 prefix to match how it's stored on-chain
-    let mut expected_with_prefix = Vec::with_capacity(33);
-    expected_with_prefix.push(0xa0); // Add the RLP prefix
-    expected_with_prefix.extend_from_slice(expected_commitment.as_slice());
+    let commitment_bytes = expected_commitment.as_slice();
 
-    // Verify storage proof
+    // Find the first non-zero byte
+    let first_nonzero = commitment_bytes.iter().position(|&b| b != 0);
+
+    let canonical_commitment = match first_nonzero {
+        Some(idx) => &commitment_bytes[idx..], // Strip leading zeros
+        None => &[0u8][..],                    // All zeros case: use single zero byte
+    };
+
+    // Use canonical RLP encoding
+    let expected_rlp = alloy_rlp::encode(canonical_commitment);
+
+    // Verify storage proof with canonically encoded commitment
     verify_proof(
         storage_root,
         data_commitment_slot_nibbles,
-        Some(expected_with_prefix),
+        Some(expected_rlp),
         &storage_proof,
     )
     .map_err(|e| anyhow!("Storage proof verification failed: {}", e))?;
