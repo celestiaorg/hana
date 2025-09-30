@@ -217,11 +217,11 @@ pub fn verify_data_commitment(
     // Use canonical RLP encoding
     let expected_rlp = alloy_rlp::encode(canonical_commitment);
 
-    // Verify storage proof
+    // Verify storage proof with canonically encoded commitment
     verify_proof(
         storage_root,
         data_commitment_slot_nibbles,
-        Some(expected_with_prefix),
+        Some(expected_rlp),
         &storage_proof,
     )
     .map_err(|e| anyhow!("Storage proof verification failed: {}", e))?;
