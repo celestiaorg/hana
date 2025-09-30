@@ -212,7 +212,6 @@ pub fn verify_data_commitment(
         Some(idx) => &commitment_bytes[idx..],
         None => &[],
     };
-    let expected_with_prefix = alloy_rlp::encode(canonical_commitment);
 
     // Use canonical RLP encoding
     let expected_rlp = alloy_rlp::encode(canonical_commitment);
