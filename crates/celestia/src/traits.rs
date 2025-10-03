@@ -3,7 +3,7 @@ use alloy_primitives::Bytes;
 use async_trait::async_trait;
 use celestia_types::Commitment;
 use core::fmt::Display;
-use kona_derive::errors::PipelineErrorKind;
+use kona_derive::PipelineErrorKind;
 
 /// Describes the functionality of the Celestia DA client needed to fetch a blob from calldata
 #[async_trait]

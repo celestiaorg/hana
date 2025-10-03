@@ -10,8 +10,8 @@
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
 use anyhow::Result;
-use clap::{ArgAction, Parser, Subcommand};
-use kona_cli::{cli_styles, init_tracing_subscriber};
+use clap::{Parser, Subcommand};
+use kona_cli::{cli_styles, LogArgs, LogConfig};
 use serde::Serialize;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -29,14 +29,13 @@ primary thread.
 #[derive(Parser, Serialize, Clone, Debug)]
 #[command(about = ABOUT, version, styles = cli_styles())]
 pub struct HostCli {
-    /// Verbosity level (0-2)
-    #[arg(long, short, action = ArgAction::Count)]
-    pub v: u8,
+    /// Logging arguments.
+    #[command(flatten)]
+    pub log_args: LogArgs,
     /// Host mode
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub mode: HostMode,
 }
-
 /// Operation modes for the host binary.
 #[derive(Subcommand, Serialize, Clone, Debug)]
 #[allow(clippy::large_enum_variant)]
@@ -49,7 +48,7 @@ pub enum HostMode {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     let cfg = HostCli::parse();
-    init_tracing_subscriber(cfg.v, None::<EnvFilter>)?;
+    LogConfig::new(cfg.log_args).init_tracing_subscriber(None::<EnvFilter>)?;
 
     match cfg.mode {
         #[cfg(feature = "celestia")]
