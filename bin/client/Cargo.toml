@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 alloy-consensus.workspace = true
 kona-preimage.workspace = true
+kona-genesis.workspace = true
 kona-proof.workspace = true
 kona-driver.workspace = true
 kona-executor.workspace = true

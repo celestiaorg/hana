@@ -11,7 +11,7 @@
 
 use anyhow::Result;
 use clap::{ArgAction, Parser, Subcommand};
-use kona_cli::{cli_styles, init_tracing_subscriber};
+use kona_cli::{cli_styles, LogArgs, LogConfig};
 use serde::Serialize;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -49,7 +49,11 @@ pub enum HostMode {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<()> {
     let cfg = HostCli::parse();
-    init_tracing_subscriber(cfg.v, None::<EnvFilter>)?;
+    LogConfig::new(LogArgs {
+        level: cfg.v,
+        ..Default::default()
+    })
+    .init_tracing_subscriber(None::<EnvFilter>)?;
 
     match cfg.mode {
         #[cfg(feature = "celestia")]

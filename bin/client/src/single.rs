@@ -6,9 +6,10 @@ use core::fmt::Debug;
 use hana_celestia::{CelestiaDADataSource, CelestiaDASource};
 use hana_oracle::provider::OracleCelestiaProvider;
 use kona_client::single::FaultProofProgramError;
-use kona_derive::sources::EthereumDataSource;
+use kona_derive::EthereumDataSource;
 use kona_driver::Driver;
 use kona_executor::TrieDBProvider;
+use kona_genesis::L1ChainConfig;
 use kona_preimage::{CommsClient, HintWriterClient, PreimageKey, PreimageOracleClient};
 use kona_proof::{
     errors::OracleProviderError,
@@ -109,8 +110,12 @@ where
     let celestia_data_source = CelestiaDASource::new(OracleCelestiaProvider::new(oracle.clone()));
     let da_provider = CelestiaDADataSource::new(ethereum_data_source, celestia_data_source);
 
+    // TODO(@theochap): Remove this and add a proper L1 chain configuration.
+    let l1_config = L1ChainConfig::default();
+
     let pipeline = OraclePipeline::new(
         rollup_config.clone(),
+        Arc::new(l1_config),
         cursor.clone(),
         oracle.clone(),
         da_provider,

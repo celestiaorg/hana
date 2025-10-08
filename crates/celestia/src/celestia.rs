@@ -8,9 +8,7 @@ use alloy_primitives::{Address, Bytes};
 use async_trait::async_trait;
 use celestia_types::Commitment;
 use kona_derive::{
-    sources::EthereumDataSource,
-    traits::{BlobProvider, ChainProvider, DataAvailabilityProvider},
-    types::PipelineResult,
+    BlobProvider, ChainProvider, DataAvailabilityProvider, EthereumDataSource, PipelineResult,
 };
 use kona_protocol::BlockInfo;
 /// A factory for creating a Celestia data source provider.
