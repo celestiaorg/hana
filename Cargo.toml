@@ -15,21 +15,20 @@ hana-oracle = { path = "crates/oracle", version = "0.1.0", default-features = fa
 # but publish infrequently (last was 2 weeks ago). We want to make sure to use the latest code
 # while we're still figuring out how to integrate with it.
 # Replace these version-based dependencies
-# TODO(fakedev9999): Replace with tag once we have a new kona-client release for Fusaka readiness
-kona-mpt = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-derive = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-driver = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-executor = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-proof = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-std-fpvm = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-preimage = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-std-fpvm-proc = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-providers-alloy = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-protocol = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-genesis = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-client = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b", default-features = false }
-kona-host = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b" }
-kona-cli = { git = "https://github.com/op-rs/kona", rev = "31241796e226199ece84c78c57b40d9e8389ff5b" }
+kona-mpt = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-derive = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-driver = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-executor = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-proof = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-std-fpvm = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-preimage = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-std-fpvm-proc = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-providers-alloy = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-protocol = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-genesis = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-client = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3", default-features = false }
+kona-host = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3" }
+kona-cli = { git = "https://github.com/op-rs/kona", tag = "kona-client/v1.1.3" }
 
 # Alloy
 alloy-rlp = { version = "0.3.12", default-features = false }
