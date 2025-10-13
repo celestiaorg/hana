@@ -5,10 +5,7 @@ use crate::traits::CelestiaProvider;
 use alloc::vec::Vec;
 use alloy_primitives::Bytes;
 use celestia_types::Commitment;
-use kona_derive::{
-    errors::{PipelineError, PipelineErrorKind},
-    types::PipelineResult,
-};
+use kona_derive::{PipelineError, PipelineErrorKind, PipelineResult};
 
 /// Data source for Celestia DA
 #[derive(Debug, Clone)]

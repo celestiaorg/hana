@@ -6,7 +6,7 @@ use core::fmt::Debug;
 use hana_celestia::{CelestiaDADataSource, CelestiaDASource};
 use hana_oracle::provider::OracleCelestiaProvider;
 use kona_client::single::FaultProofProgramError;
-use kona_derive::sources::EthereumDataSource;
+use kona_derive::EthereumDataSource;
 use kona_driver::Driver;
 use kona_executor::TrieDBProvider;
 use kona_preimage::{CommsClient, HintWriterClient, PreimageKey, PreimageOracleClient};
@@ -111,6 +111,7 @@ where
 
     let pipeline = OraclePipeline::new(
         rollup_config.clone(),
+        boot.l1_config.into(),
         cursor.clone(),
         oracle.clone(),
         da_provider,
