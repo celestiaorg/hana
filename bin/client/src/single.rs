@@ -1,6 +1,7 @@
 use alloc::sync::Arc;
 use alloy_consensus::Sealed;
 use alloy_evm::{EvmFactory, FromRecoveredTx, FromTxWithEncoded};
+use alloy_op_evm::block::OpTxEnv;
 use alloy_primitives::B256;
 use core::fmt::Debug;
 use hana_celestia::{CelestiaDADataSource, CelestiaDASource};
@@ -20,6 +21,7 @@ use kona_proof::{
 };
 use op_alloy_consensus::OpTxEnvelope;
 use op_revm::OpSpecId;
+use revm::context::BlockEnv;
 use tracing::{error, info};
 
 /// Executes the fault proof program with the given [PreimageOracleClient] and [HintWriterClient].
@@ -32,8 +34,9 @@ pub async fn run<P, H, Evm>(
 where
     P: PreimageOracleClient + Send + Sync + Debug + Clone,
     H: HintWriterClient + Send + Sync + Debug + Clone,
-    Evm: EvmFactory<Spec = OpSpecId> + Send + Sync + Debug + Clone + 'static,
-    <Evm as EvmFactory>::Tx: FromTxWithEncoded<OpTxEnvelope> + FromRecoveredTx<OpTxEnvelope>,
+    Evm: EvmFactory<Spec = OpSpecId, BlockEnv = BlockEnv> + Send + Sync + Debug + Clone + 'static,
+    <Evm as EvmFactory>::Tx:
+        FromTxWithEncoded<OpTxEnvelope> + FromRecoveredTx<OpTxEnvelope> + OpTxEnv,
 {
     const ORACLE_LRU_SIZE: usize = 1024;
 
