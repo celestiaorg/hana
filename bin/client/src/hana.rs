@@ -13,7 +13,6 @@
 extern crate alloc;
 
 use alloc::string::String;
-use kona_client::fpvm_evm::FpvmOpEvmFactory;
 use kona_preimage::{HintWriter, OracleReader};
 use kona_std_fpvm::{FileChannel, FileDescriptor};
 use kona_std_fpvm_proc::client_entry;
@@ -43,9 +42,5 @@ fn main() -> Result<(), String> {
             .expect("Failed to set tracing subscriber");
     }
 
-    kona_proof::block_on(hana_client::single::run(
-        ORACLE_READER,
-        HINT_WRITER,
-        FpvmOpEvmFactory::new(HINT_WRITER, ORACLE_READER),
-    ))
+    kona_proof::block_on(hana_client::single::run(ORACLE_READER, HINT_WRITER))
 }

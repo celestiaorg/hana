@@ -3,10 +3,9 @@
 use celestia_types::nmt::Namespace;
 use clap::Parser;
 use hana_oracle::hint::HintWrapper;
-use kona_client::fpvm_evm::FpvmOpEvmFactory;
 use kona_genesis::RollupConfig;
 use kona_host::{
-    eth::http_provider,
+    eth::rpc_provider,
     single::{SingleChainHost, SingleChainHostError, SingleChainLocalInputs, SingleChainProviders},
     DiskKeyValueStore, MemoryKeyValueStore, OfflineHostBackend, OnlineHostBackend,
     OnlineHostBackendCfg, PreimageServer, SharedKeyValueStore, SplitKeyValueStore,
@@ -128,7 +127,6 @@ impl CelestiaChainHost {
         let client_task = task::spawn(hana_client::single::run(
             oracle_reader.clone(),
             hint_writer.clone(),
-            FpvmOpEvmFactory::new(hint_writer, oracle_reader),
         ));
 
         let (_, client_result) = tokio::try_join!(server_task, client_task)?;
@@ -185,12 +183,13 @@ impl CelestiaChainHost {
 
     /// Creates the providers required for the host backend.
     async fn create_providers(&self) -> Result<CelestiaChainProviders, SingleChainHostError> {
-        let l1_provider = http_provider(
+        let l1_provider = rpc_provider(
             self.single_host
                 .l1_node_address
                 .as_ref()
                 .ok_or(SingleChainHostError::Other("Provider must be set"))?,
-        );
+        )
+        .await;
         let blob_provider = OnlineBlobProvider::init(OnlineBeaconClient::new_http(
             self.single_host
                 .l1_beacon_address
@@ -198,12 +197,13 @@ impl CelestiaChainHost {
                 .ok_or(SingleChainHostError::Other("Beacon API URL must be set"))?,
         ))
         .await;
-        let l2_provider = http_provider::<Optimism>(
+        let l2_provider = rpc_provider::<Optimism>(
             self.single_host
                 .l2_node_address
                 .as_ref()
                 .ok_or(SingleChainHostError::Other("L2 node address must be set"))?,
-        );
+        )
+        .await;
 
         let celestia_client =
             celestia_rpc::Client::new(

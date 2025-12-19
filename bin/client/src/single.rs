@@ -1,12 +1,10 @@
 use alloc::sync::Arc;
 use alloy_consensus::Sealed;
-use alloy_evm::{EvmFactory, FromRecoveredTx, FromTxWithEncoded};
-use alloy_op_evm::block::OpTxEnv;
 use alloy_primitives::B256;
 use core::fmt::Debug;
 use hana_celestia::{CelestiaDADataSource, CelestiaDASource};
 use hana_oracle::provider::OracleCelestiaProvider;
-use kona_client::single::FaultProofProgramError;
+use kona_client::{fpvm_evm::FpvmOpEvmFactory, single::FaultProofProgramError};
 use kona_derive::EthereumDataSource;
 use kona_driver::Driver;
 use kona_executor::TrieDBProvider;
@@ -19,24 +17,14 @@ use kona_proof::{
     sync::new_oracle_pipeline_cursor,
     BootInfo, CachingOracle, HintType,
 };
-use op_alloy_consensus::OpTxEnvelope;
-use op_revm::OpSpecId;
-use revm::context::BlockEnv;
 use tracing::{error, info};
 
 /// Executes the fault proof program with the given [PreimageOracleClient] and [HintWriterClient].
 #[inline]
-pub async fn run<P, H, Evm>(
-    oracle_client: P,
-    hint_client: H,
-    evm_factory: Evm,
-) -> Result<(), FaultProofProgramError>
+pub async fn run<P, H>(oracle_client: P, hint_client: H) -> Result<(), FaultProofProgramError>
 where
-    P: PreimageOracleClient + Send + Sync + Debug + Clone,
-    H: HintWriterClient + Send + Sync + Debug + Clone,
-    Evm: EvmFactory<Spec = OpSpecId, BlockEnv = BlockEnv> + Send + Sync + Debug + Clone + 'static,
-    <Evm as EvmFactory>::Tx:
-        FromTxWithEncoded<OpTxEnvelope> + FromRecoveredTx<OpTxEnvelope> + OpTxEnv,
+    P: PreimageOracleClient + Send + Sync + Debug + Clone + 'static,
+    H: HintWriterClient + Send + Sync + Debug + Clone + 'static,
 {
     const ORACLE_LRU_SIZE: usize = 1024;
 
@@ -46,8 +34,8 @@ where
 
     let oracle = Arc::new(CachingOracle::new(
         ORACLE_LRU_SIZE,
-        oracle_client,
-        hint_client,
+        oracle_client.clone(),
+        hint_client.clone(),
     ));
     let boot = match BootInfo::load(oracle.as_ref()).await {
         Ok(boot) => boot,
@@ -122,6 +110,9 @@ where
         l2_provider.clone(),
     )
     .await?;
+
+    let evm_factory = FpvmOpEvmFactory::new(hint_client, oracle_client);
+
     let executor = KonaExecutor::new(
         rollup_config.as_ref(),
         l2_provider.clone(),
