@@ -90,7 +90,7 @@ impl HintHandler for CelestiaChainHintHandler {
                 kv_lock.set(
                     PreimageKey::new(*celestia_commitment_hash, PreimageKeyType::GlobalGeneric)
                         .into(),
-                    payload.into(),
+                    payload,
                 )?;
             }
         }
