@@ -30,22 +30,18 @@ pub async fn find_data_commitment(
     // Calculate event signature manually for reliability
     let event_signature = "DataCommitmentStored(uint256,uint64,uint64,bytes32)";
     let event_selector = keccak256(event_signature.as_bytes());
-    let topic0: FilterSet<B256> = vec![event_selector.into()].into();
+    let topic0: FilterSet<B256> = vec![event_selector].into();
 
     // Start from the given Ethereum block height and scan backwards
     let mut end = l1_head_block_number;
-    let mut start = if end > FILTER_BLOCK_RANGE {
-        end - FILTER_BLOCK_RANGE
-    } else {
-        0
-    };
+    let mut start = end.saturating_sub(FILTER_BLOCK_RANGE);
 
     loop {
         // Create filter for DataCommitmentStored events
         let filter = Filter {
             block_option: FilterBlockOption::Range {
-                from_block: Some(BlockNumberOrTag::Number(start.into())),
-                to_block: Some(BlockNumberOrTag::Number(end.into())),
+                from_block: Some(BlockNumberOrTag::Number(start)),
+                to_block: Some(BlockNumberOrTag::Number(end)),
             },
             address: vec![blobstream_address].into(),
             topics: [
@@ -93,11 +89,7 @@ pub async fn find_data_commitment(
 
         // Move to the previous batch
         end = start;
-        start = if end > FILTER_BLOCK_RANGE {
-            end - FILTER_BLOCK_RANGE
-        } else {
-            0
-        };
+        start = end.saturating_sub(FILTER_BLOCK_RANGE);
     }
 }
 
@@ -177,7 +169,7 @@ pub async fn get_blobstream_proof(
     let encoded_data_root_tuple = encode_data_root_tuple(height, &data_root);
 
     data_root_proof
-        .verify(encoded_data_root_tuple, *event.data_commitment.clone())
+        .verify(encoded_data_root_tuple, *event.data_commitment)
         .expect("failed to verify data root tuple inclusion proof");
 
     let slot = calculate_mapping_slot(DATA_COMMITMENTS_SLOT, event.proof_nonce);
@@ -199,7 +191,7 @@ pub async fn get_blobstream_proof(
     let proof_bytes: Vec<Bytes> = proof_response
         .storage_proof
         .into_iter()
-        .flat_map(|proof| proof.proof.into_iter().map(|bytes| bytes))
+        .flat_map(|proof| proof.proof.into_iter())
         .collect();
 
     match verify_data_commitment(
@@ -218,22 +210,22 @@ pub async fn get_blobstream_proof(
         Ok(_) => {
             println!("Succesfully verified Blobstream data commitment");
 
-            return Ok(BlobstreamProof::new(
+            Ok(BlobstreamProof::new(
                 data_root,
                 event.data_commitment,
                 data_root_proof,
                 share_proof,
                 event.proof_nonce,
-                proof_response.storage_hash.clone(),
+                proof_response.storage_hash,
                 proof_bytes,
                 proof_response.account_proof,
                 blobstream_balance,
                 blobstream_nonce,
                 blobstream_code_hash,
                 block_header.inner.clone(),
-            ));
+            ))
         }
-        Err(err) => return Err(err.into()),
+        Err(err) => Err(err),
     }
 }
 

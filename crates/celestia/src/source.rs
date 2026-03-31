@@ -40,7 +40,7 @@ where
         };
 
         // check decoding / encoding from lumina crates
-        Ok(Bytes::from(next_data))
+        Ok(next_data)
     }
 
     /// Clears the source's data
@@ -69,13 +69,13 @@ where
 
                 match pipeline_err {
                     PipelineErrorKind::Critical(pipeline_err) => {
-                        return Err(PipelineErrorKind::Critical(pipeline_err))
+                        Err(PipelineErrorKind::Critical(pipeline_err))
                     }
                     PipelineErrorKind::Temporary(pipeline_err) => {
-                        return Err(PipelineErrorKind::Temporary(pipeline_err))
+                        Err(PipelineErrorKind::Temporary(pipeline_err))
                     }
                     PipelineErrorKind::Reset(pipeline_err) => {
-                        return Err(PipelineErrorKind::Reset(pipeline_err))
+                        Err(PipelineErrorKind::Reset(pipeline_err))
                     }
                 }
             }

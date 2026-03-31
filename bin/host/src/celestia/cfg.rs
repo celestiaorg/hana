@@ -210,12 +210,12 @@ impl CelestiaChainHost {
                 self.celestia_args.celestia_connection.as_ref().ok_or(
                     SingleChainHostError::Other("Celestia connection must be set"),
                 )?,
-                self.celestia_args.auth_token.as_ref().map(|x| x.as_str()),
+                self.celestia_args.auth_token.as_deref(),
             )
             .await
             .expect("Failed creating rpc client");
 
-        let namespace_bytes = hex::decode(&self.celestia_args.namespace.as_ref().ok_or(
+        let namespace_bytes = hex::decode(self.celestia_args.namespace.as_ref().ok_or(
             SingleChainHostError::Other("Celestia Namespace must be set"),
         )?)
         .expect("Invalid hex");

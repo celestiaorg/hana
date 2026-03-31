@@ -195,7 +195,7 @@ pub fn verify_data_commitment(
     verify_proof(
         block_header.state_root,
         blobstream_address_nibbles,
-        Some(alloy_rlp::encode(&account)),
+        Some(alloy_rlp::encode(account)),
         &account_proof,
     )
     .map_err(|e| anyhow!("Account proof verification failed: {}", e))?;
