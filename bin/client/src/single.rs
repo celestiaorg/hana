@@ -1,6 +1,6 @@
 use alloc::sync::Arc;
 use alloy_consensus::Sealed;
-use alloy_op_evm::post_exec::PostExecEvmFactoryAdapter;
+use alloy_op_evm::{block::OpAlloyReceiptBuilder, post_exec::PostExecEvmFactoryAdapter};
 use alloy_primitives::B256;
 use core::fmt::Debug;
 use hana_celestia::{CelestiaDADataSource, CelestiaDASource};
@@ -122,6 +122,7 @@ where
         l2_provider.clone(),
         l2_provider,
         evm_factory,
+        OpAlloyReceiptBuilder::default(),
         None,
     );
     let mut driver = Driver::new(cursor, executor, pipeline);
